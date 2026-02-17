@@ -179,14 +179,21 @@ function BattleBoardCard({
                     </p>
                   </div>
                 )}
-                <p className="text-gray-500 text-xs">이 배틀에 리액션을 남겨보세요</p>
+                <p className="text-gray-500 text-xs">
+                  {hasVoted ? '이미 리액션을 남기셨습니다' : '이 배틀에 리액션을 남겨보세요'}
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {REACTION_OPTIONS.map(({ key, label, emoji }) => (
-                                <button
+                    <button
                       key={key}
                       type="button"
+                      disabled={hasVoted}
                       onClick={(e) => onReaction(battle.battle_id, key, e)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white/90 text-sm font-medium transition-all"
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                        hasVoted
+                          ? 'bg-gray-700/60 text-gray-500 cursor-not-allowed'
+                          : 'bg-gray-700 hover:bg-gray-600 text-white/90'
+                      }`}
                     >
                       <span>{emoji}</span>
                       <span>{label}</span>
@@ -215,10 +222,31 @@ export default function BoardPage() {
   const [isMotivationOpen, setIsMotivationOpen] = useState(false)
   const [expandedBattleId, setExpandedBattleId] = useState<string | null>(null)
   const [reactionCounts, setReactionCounts] = useState<Record<string, Record<string, number>>>({})
+  const [votedBattleIds, setVotedBattleIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     loadBattles()
   }, [sortBy, selectedBattlefield])
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(REACTION_VOTED_KEY)
+      const arr = raw ? (JSON.parse(raw) as string[]) : []
+      if (Array.isArray(arr) && arr.length > 0) {
+        setVotedBattleIds(new Set(arr))
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(REACTION_VOTED_KEY, JSON.stringify([...votedBattleIds]))
+    } catch {
+      // ignore
+    }
+  }, [votedBattleIds])
 
   async function loadBattles() {
     setLoading(true)
@@ -268,10 +296,7 @@ export default function BoardPage() {
   const handleReaction = async (battleId: string, reaction: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    const battle = battles.find((b) => b.battle_id === battleId)
-    const current = reactionCounts[battleId] ?? battle?.reactions ?? DEFAULT_REACTIONS
-    const nextCounts = { ...current, [reaction]: (current[reaction] ?? 0) + 1 }
-    setReactionCounts((prev) => ({ ...prev, [battleId]: nextCounts }))
+    if (votedBattleIds.has(battleId)) return
     try {
       const res = await fetch('/api/battle-reaction', {
         method: 'POST',
@@ -281,9 +306,10 @@ export default function BoardPage() {
       const data = await res.json()
       if (res.ok && data.reactions) {
         setReactionCounts((prev) => ({ ...prev, [battleId]: data.reactions }))
+        setVotedBattleIds((prev) => new Set(prev).add(battleId))
       }
     } catch {
-      // 낙관적 업데이트만 유지 (이미 숫자 올라간 상태)
+      // no-op
     }
   }
 
@@ -365,6 +391,7 @@ export default function BoardPage() {
                 getReactions={getReactions}
                 onReaction={handleReaction}
                 onCopyLink={copyLink}
+                hasVoted={votedBattleIds.has(battle.battle_id)}
               />
             ))}
           </div>
@@ -393,6 +420,7 @@ export default function BoardPage() {
                         getReactions={getReactions}
                         onReaction={handleReaction}
                         onCopyLink={copyLink}
+                        hasVoted={votedBattleIds.has(battle.battle_id)}
                       />
                     ))}
                   </div>
