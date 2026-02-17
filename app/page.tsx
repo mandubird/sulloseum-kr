@@ -1,16 +1,43 @@
 'use client'
 
 import { useState } from 'react'
-import { BATTLEFIELDS } from '@/lib/battlefields'
+import { motion, AnimatePresence } from 'framer-motion'
+import { BATTLEFIELDS, MAIN_RANDOM_TOPICS } from '@/lib/battlefields'
 import BattlefieldCard from '@/components/BattlefieldCard'
 import BattleSetupModal from '@/components/BattleSetupModal'
+
+const MOTIVATION_TEXT = [
+  '우리는 매일 수많은 논쟁을 마주합니다.',
+  '연애, 돈, 직장, 결혼, 세대 차이까지.',
+  '',
+  '하지만 대부분의 갈등은',
+  '감정만 남기고 끝나버립니다.',
+  '',
+  '썰로세움은',
+  '사람 대신 AI 페르소나가',
+  '극단적인 입장을 연기하며',
+  '한국 사회의 다양한 가치관을 드러내는 실험 공간입니다.',
+  '',
+  '이곳의 배틀은 누군가를 공격하기 위한 싸움이 아니라,',
+  '생각의 차이를 안전하게 관찰하기 위한 장치입니다.',
+  '',
+  '웃고 넘길 수도 있고,',
+  '고개를 끄덕일 수도 있고,',
+  '불편할 수도 있습니다.',
+  '',
+  '그 모든 반응이',
+  '우리가 서로를 이해하는 출발점이라고 믿습니다.',
+]
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedBattlefield, setSelectedBattlefield] = useState<string | null>(null)
+  const [initialTopic, setInitialTopic] = useState<string | null>(null)
+  const [isMotivationOpen, setIsMotivationOpen] = useState(false)
 
-  const handleBattlefieldClick = (battlefieldId: string) => {
+  const handleBattlefieldClick = (battlefieldId: string, topic?: string) => {
     setSelectedBattlefield(battlefieldId)
+    setInitialTopic(topic ?? null)
     setIsModalOpen(true)
   }
 
@@ -25,7 +52,9 @@ export default function Home() {
           AI 파이터들의 떡밥 배틀 아레나
         </p>
         <p className="text-sm md:text-base text-white/70 mt-2">
-          논쟁거리를 던지고, AI 페르소나들이 실시간으로 싸우는 모습을 지켜보세요!
+          🧪 서로 다른 가치관을 실험하는 AI 배틀
+          <br />
+          🎭 과장된 페르소나가 입장을 연기합니다.
         </p>
       </div>
 
@@ -34,7 +63,7 @@ export default function Home() {
       {/* 모바일: 게시판 먼저 · 툭 튀어나오지 않게 섹션으로 감싸서 자연스럽게 */}
       <div className="max-w-7xl mx-auto order-1 md:order-2 w-full shrink-0">
         <section className="md:text-center py-4 md:py-0 md:mb-8">
-          <p className="text-white/60 text-xs md:hidden mb-2 px-1">지난 배틀 보기</p>
+          <p className="text-white/60 text-xs text-center mb-2 px-1">※ 본 배틀은 AI가 설정된 입장을 연기합니다. ※</p>
           <a
             href="/board"
             className="inline-flex items-center justify-center gap-2 w-full md:w-auto px-5 py-3 rounded-xl font-bold transition-all
@@ -52,18 +81,18 @@ export default function Home() {
             <BattlefieldCard
               key={battlefield.id}
               battlefield={battlefield}
-              onClick={() => handleBattlefieldClick(battlefield.id)}
+              onClick={() => handleBattlefieldClick(battlefield.id, undefined)}
             />
           ))}
         </div>
       </div>
 
-      {/* Random Battle Button */}
+      {/* Random Battle Button: 메인 추천 떡밥 목록에서 랜덤 선택 */}
       <div className="max-w-7xl mx-auto mt-12 text-center order-3">
         <button
           onClick={() => {
-            const randomBattlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)]
-            handleBattlefieldClick(randomBattlefield.id)
+            const item = MAIN_RANDOM_TOPICS[Math.floor(Math.random() * MAIN_RANDOM_TOPICS.length)]
+            handleBattlefieldClick(item.battlefield, item.topic_text)
           }}
           className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold text-lg rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 animate-pulse-glow"
         >
@@ -77,17 +106,69 @@ export default function Home() {
       {isModalOpen && selectedBattlefield && (
         <BattleSetupModal
           battlefieldId={selectedBattlefield}
+          initialTopic={initialTopic ?? undefined}
           onClose={() => {
             setIsModalOpen(false)
             setSelectedBattlefield(null)
+            setInitialTopic(null)
           }}
         />
       )}
 
-      {/* Footer: 맨 하단 고정 */}
-      <footer className="max-w-7xl mx-auto mt-auto pt-8 pb-6 md:pt-16 text-center text-white/60 text-sm shrink-0">
-        <p>© 2026 썰로세움 | 한국 인터넷 문화 AI 실험 프로젝트</p>
+      {/* Footer: 제작동기 버튼 + 저작권 */}
+      <footer className="max-w-7xl mx-auto mt-auto pt-8 pb-6 md:pt-16 text-center shrink-0">
+        <button
+          type="button"
+          onClick={() => setIsMotivationOpen(true)}
+          className="mb-4 px-5 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 text-sm font-medium transition-all border border-white/20"
+        >
+          왜 썰로세움을 만들었나요?
+        </button>
+        <p className="text-white/60 text-sm">© 2026 썰로세움 | 한국 인터넷 문화 AI 실험 프로젝트</p>
       </footer>
+
+      {/* 제작동기 모달 */}
+      <AnimatePresence>
+        {isMotivationOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsMotivationOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto border border-gray-700"
+            >
+              <div className="p-6 md:p-8">
+                <h2 className="text-xl font-bold text-white mb-6 text-center">
+                  왜 썰로세움을 만들었나요?
+                </h2>
+                <div className="space-y-3 text-white/90 text-sm md:text-base leading-relaxed">
+                  {MOTIVATION_TEXT.map((line, i) => (
+                    <p key={i} className={line === '' ? 'h-3' : ''}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+                <div className="mt-8 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsMotivationOpen(false)}
+                    className="px-6 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-medium"
+                  >
+                    닫기
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   )
 }

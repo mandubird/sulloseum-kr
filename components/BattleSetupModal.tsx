@@ -9,14 +9,15 @@ import { useRouter } from 'next/navigation'
 
 interface BattleSetupModalProps {
   battlefieldId: string
+  initialTopic?: string
   onClose: () => void
 }
 
-export default function BattleSetupModal({ battlefieldId, onClose }: BattleSetupModalProps) {
+export default function BattleSetupModal({ battlefieldId, initialTopic, onClose }: BattleSetupModalProps) {
   const router = useRouter()
   const battlefield = getBattlefield(battlefieldId as any)
   const [step, setStep] = useState<1 | 2>(1) // 1: Topic Input, 2: Fighter Selection
-  const [topic, setTopic] = useState('')
+  const [topic, setTopic] = useState(initialTopic ?? '')
   const [agents, setAgents] = useState<Agent[]>([])
   const [selectedFighter1, setSelectedFighter1] = useState<Agent | null>(null)
   const [selectedFighter2, setSelectedFighter2] = useState<Agent | null>(null)
@@ -25,6 +26,10 @@ export default function BattleSetupModal({ battlefieldId, onClose }: BattleSetup
   useEffect(() => {
     fetchAgents()
   }, [])
+
+  useEffect(() => {
+    if (initialTopic != null) setTopic(initialTopic)
+  }, [battlefieldId, initialTopic])
 
   const fetchAgents = async () => {
     const { data, error } = await supabase.from('agents').select('*').order('persona_name')

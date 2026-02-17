@@ -62,6 +62,7 @@ export default function BattleArena() {
   const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const handleReactionRef = useRef<(side: 1 | 2, reaction: ReactionType) => Promise<void>>(() => Promise.resolve())
+  const viewCountRecordedRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (battleId) loadBattle()
@@ -274,6 +275,14 @@ export default function BattleArena() {
         setMvpDamage(battle.mvp_damage || 0)
         setPhase('ended')
         setReplayStep(Math.min(2, initialMessages.length))
+        if (viewCountRecordedRef.current !== battleId) {
+          viewCountRecordedRef.current = battleId
+          fetch('/api/battle-view', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ battleId }),
+          }).catch(() => {})
+        }
       } else {
         setPhase('waiting')
       }
@@ -419,6 +428,7 @@ export default function BattleArena() {
   async function endBattle(winner: 1 | 2, finalHp1: number, finalHp2: number) {
     setWinnerSide(winner)
     setPhase('ended')
+    const initialViewCount = 8 + Math.floor(Math.random() * 4)
     await supabase
       .from('battles')
       .update({
@@ -428,6 +438,7 @@ export default function BattleArena() {
         end_time: new Date().toISOString(),
         mvp_statement: mvpStatement,
         mvp_damage: mvpDamage,
+        view_count: initialViewCount,
       })
       .eq('battle_id', battleId)
   }

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     if (existing && existing.length >= 3) {
       const randomBattle = existing[Math.floor(Math.random() * Math.min(existing.length, 5))]
       await supabase.from('battles')
-        .update({ view_count: (randomBattle.view_count || 0) + 1 })
+        .update({ view_count: (randomBattle.view_count || 0) + 3 })
         .eq('battle_id', randomBattle.battle_id)
       return NextResponse.json({ battleId: randomBattle.battle_id, isReplay: true })
     }

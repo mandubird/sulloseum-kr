@@ -87,7 +87,7 @@ export default function BattleResult({
 
       {/* MVP 대사 */}
       {mvpStatement && (
-        <div className="bg-black/40 rounded-2xl p-4 mb-6 border border-yellow-500/30">
+        <div className="bg-black/40 rounded-2xl p-4 mb-4 border border-yellow-500/30">
           <p className="text-yellow-400 text-xs font-bold mb-2">
             💬 MVP 대사 ({mvpDamage} 데미지)
           </p>
@@ -95,20 +95,19 @@ export default function BattleResult({
         </div>
       )}
 
-      {/* 공유 유도 버튼 3개 */}
+      {/* 중재 AI 대사 */}
+      <div className="bg-gray-700/50 rounded-2xl p-4 mb-6 border border-gray-600 text-center">
+        <p className="text-gray-300 text-xs font-bold mb-1">⚖️ 중재 AI</p>
+        <p className="text-white/90 text-sm">결국 가치관과 상황에 따라 달라질 수 있겠네요. 당신 생각은? 댓글로</p>
+      </div>
+
+      {/* 공유 유도 버튼 */}
       <div className="space-y-3">
         <button
           onClick={onRevenge}
           className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all hover:scale-105"
         >
           ⚔️ 새 배틀 세우기
-        </button>
-
-        <button
-          onClick={onRevenge}
-          className="w-full py-3 bg-red-700 hover:bg-red-600 text-white rounded-xl font-bold transition-all hover:scale-105"
-        >
-          😤 {loserEmoji} {loserName}으로 복수하기
         </button>
 
         <button
