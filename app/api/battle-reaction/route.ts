@@ -27,15 +27,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const voterHash = getClientFingerprint(req)
-
-    const { data: existingVote } = await supabase
-      .from('battle_reaction_votes')
-      .select('battle_id')
-      .eq('battle_id', battleId)
-      .eq('voter_hash', voterHash)
-      .maybeSingle()
-
     const { data: battle, error: fetchError } = await supabase
       .from('battles')
       .select('reactions')
@@ -48,19 +39,36 @@ export async function POST(req: NextRequest) {
 
     const current = (battle.reactions as Record<string, number>) || { ...DEFAULT_REACTIONS }
 
-    if (existingVote) {
+    const voterHash = getClientFingerprint(req)
+    let allowIncrement = false
+
+    const { data: existingVote, error: selectVoteError } = await supabase
+      .from('battle_reaction_votes')
+      .select('battle_id')
+      .eq('battle_id', battleId)
+      .eq('voter_hash', voterHash)
+      .maybeSingle()
+
+    if (selectVoteError) {
+      allowIncrement = true
+    } else if (existingVote) {
       return NextResponse.json({ reactions: current, alreadyVoted: true })
+    } else {
+      const { error: insertVoteError } = await supabase.from('battle_reaction_votes').insert({
+        battle_id: battleId,
+        voter_hash: voterHash,
+        reaction,
+      })
+      if (!insertVoteError) {
+        allowIncrement = true
+      } else if (insertVoteError.code === '23505') {
+        return NextResponse.json({ reactions: current, alreadyVoted: true })
+      } else {
+        allowIncrement = true
+      }
     }
 
-    const { error: insertVoteError } = await supabase.from('battle_reaction_votes').insert({
-      battle_id: battleId,
-      voter_hash: voterHash,
-      reaction,
-    })
-
-    if (insertVoteError) {
-      return NextResponse.json({ reactions: current, alreadyVoted: true })
-    }
+    if (!allowIncrement) return NextResponse.json({ reactions: current, alreadyVoted: true })
 
     const updated = { ...current, [reaction]: (current[reaction] ?? 0) + 1 }
 
