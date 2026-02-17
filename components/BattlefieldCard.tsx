@@ -23,7 +23,7 @@ export default function BattlefieldCard({ battlefield, onClick }: BattlefieldCar
       onClick={onClick}
     >
       <div
-        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${battlefield.gradient} p-4 md:p-6 shadow-2xl min-h-[100px] md:h-64 flex flex-col justify-between`}
+        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${battlefield.gradient} p-4 md:p-6 min-h-[100px] md:h-64 flex flex-col justify-between border-2 border-white/40 shadow-xl shadow-black/40`}
       >
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">

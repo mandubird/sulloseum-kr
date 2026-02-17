@@ -29,6 +29,8 @@ export default function Home() {
         </p>
       </div>
 
+      {/* 본문 영역: flex-1로 남는 공간 채워서 푸터를 항상 화면 맨 아래로 */}
+      <div className="flex-1 flex flex-col min-h-0">
       {/* 모바일: 게시판 먼저 · 툭 튀어나오지 않게 섹션으로 감싸서 자연스럽게 */}
       <div className="max-w-7xl mx-auto order-1 md:order-2 w-full shrink-0">
         <section className="md:text-center py-4 md:py-0 md:mb-8">
@@ -67,6 +69,8 @@ export default function Home() {
         >
           🎲 랜덤 떡밥 배틀 시작!
         </button>
+      </div>
+
       </div>
 
       {/* Battle Setup Modal */}
