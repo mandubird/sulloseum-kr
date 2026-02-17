@@ -15,9 +15,9 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen p-8 flex flex-col">
-      {/* Header */}
-      <div className="max-w-7xl mx-auto mb-12 text-center px-1 shrink-0">
+    <main className="min-h-screen p-4 md:p-8 flex flex-col">
+      {/* Header: 모바일에서 밑 빈 공간 축소 */}
+      <div className="max-w-7xl mx-auto mb-5 md:mb-12 text-center px-1 shrink-0">
         <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-8xl font-display text-white mb-4 drop-shadow-2xl animate-bounce-subtle whitespace-nowrap">
           ⚔️ 썰로세움 ⚔️
         </h1>
@@ -29,19 +29,23 @@ export default function Home() {
         </p>
       </div>
 
-      {/* 모바일: 게시판 먼저(order-1) / 데스크톱: 갤러리 먼저(order-2) */}
-      <div className="max-w-7xl mx-auto order-1 md:order-2 mb-6 md:mb-8 text-center shrink-0">
-        <a
-          href="/board"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all"
-        >
-          📋 배틀 게시판
-        </a>
+      {/* 모바일: 게시판 먼저 · 툭 튀어나오지 않게 섹션으로 감싸서 자연스럽게 */}
+      <div className="max-w-7xl mx-auto order-1 md:order-2 w-full shrink-0">
+        <section className="md:text-center py-4 md:py-0 md:mb-8">
+          <p className="text-white/60 text-xs md:hidden mb-2 px-1">지난 배틀 보기</p>
+          <a
+            href="/board"
+            className="inline-flex items-center justify-center gap-2 w-full md:w-auto px-5 py-3 rounded-xl font-bold transition-all
+              bg-white/5 hover:bg-white/15 text-white/95 border border-white/10"
+          >
+            📋 배틀 게시판
+          </a>
+        </section>
       </div>
 
-      {/* Battlefield Gallery */}
-      <div className="max-w-7xl mx-auto order-2 md:order-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Battlefield Gallery: 모바일에서 가로로 더 넓게 */}
+      <div className="max-w-7xl mx-auto order-2 md:order-1 w-full -mx-2 md:mx-auto px-2 md:px-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {BATTLEFIELDS.map((battlefield) => (
             <BattlefieldCard
               key={battlefield.id}
@@ -76,8 +80,8 @@ export default function Home() {
         />
       )}
 
-      {/* Footer */}
-      <footer className="max-w-7xl mx-auto mt-16 text-center text-white/60 text-sm">
+      {/* Footer: 맨 하단 고정 */}
+      <footer className="max-w-7xl mx-auto mt-auto pt-8 pb-6 md:pt-16 text-center text-white/60 text-sm shrink-0">
         <p>© 2026 썰로세움 | 한국 인터넷 문화 AI 실험 프로젝트</p>
       </footer>
     </main>
