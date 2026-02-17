@@ -15,9 +15,9 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen p-8">
+    <main className="min-h-screen p-8 flex flex-col">
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-12 text-center px-1">
+      <div className="max-w-7xl mx-auto mb-12 text-center px-1 shrink-0">
         <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-8xl font-display text-white mb-4 drop-shadow-2xl animate-bounce-subtle whitespace-nowrap">
           ⚔️ 썰로세움 ⚔️
         </h1>
@@ -29,8 +29,18 @@ export default function Home() {
         </p>
       </div>
 
+      {/* 모바일: 게시판 먼저(order-1) / 데스크톱: 갤러리 먼저(order-2) */}
+      <div className="max-w-7xl mx-auto order-1 md:order-2 mb-6 md:mb-8 text-center shrink-0">
+        <a
+          href="/board"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all"
+        >
+          📋 배틀 게시판
+        </a>
+      </div>
+
       {/* Battlefield Gallery */}
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto order-2 md:order-1">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {BATTLEFIELDS.map((battlefield) => (
             <BattlefieldCard
@@ -43,7 +53,7 @@ export default function Home() {
       </div>
 
       {/* Random Battle Button */}
-      <div className="max-w-7xl mx-auto mt-12 text-center">
+      <div className="max-w-7xl mx-auto mt-12 text-center order-3">
         <button
           onClick={() => {
             const randomBattlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)]
@@ -65,16 +75,6 @@ export default function Home() {
           }}
         />
       )}
-
-      {/* 게시판 링크 */}
-      <div className="max-w-7xl mx-auto mt-8 text-center">
-        <a
-          href="/board"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all"
-        >
-          📋 배틀 게시판
-        </a>
-      </div>
 
       {/* Footer */}
       <footer className="max-w-7xl mx-auto mt-16 text-center text-white/60 text-sm">

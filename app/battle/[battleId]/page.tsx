@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { calculateDamage, ReactionType } from '@/lib/damage'
+import { calculateDamage, ReactionType, getRandomReaction } from '@/lib/damage'
 import MentalBar from '@/components/MentalBar'
 import ChatBubble from '@/components/ChatBubble'
 import ReactionButtons from '@/components/ReactionButtons'
@@ -53,8 +53,14 @@ export default function BattleArena() {
   const [mvpDamage, setMvpDamage] = useState(0)
   const [replayStep, setReplayStep] = useState(0)
   const [resultExpanded, setResultExpanded] = useState(false)
+  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null)
+  const [autoPlaying, setAutoPlaying] = useState(false)
+  const [showReturnReminder, setShowReturnReminder] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const battleTopRef = useRef<HTMLDivElement>(null)
+  const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const handleReactionRef = useRef<(side: 1 | 2, reaction: ReactionType) => Promise<void>>(() => Promise.resolve())
 
   useEffect(() => {
     if (battleId) loadBattle()
@@ -74,6 +80,95 @@ export default function BattleArena() {
       battleTopRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' })
     }
   }, [phase, messages.length])
+
+  // handleReaction ref (자동 진행 타이머에서 호출용)
+  useEffect(() => {
+    handleReactionRef.current = handleReaction
+  })
+
+  // 무반응 30초 → "3초 후 자동 진행" → 자동으로 끝날 때까지 진행 (API 효율: 빠르게 결과·게시판화)
+  const INACTIVITY_MS = 30 * 1000
+  const COUNTDOWN_SEC = 3
+  useEffect(() => {
+    if (phase !== 'waiting' || !fighter1 || !fighter2 || autoPlaying) {
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current)
+        inactivityTimeoutRef.current = null
+      }
+      setAutoAdvanceCountdown(null)
+      return
+    }
+    inactivityTimeoutRef.current = setTimeout(() => {
+      inactivityTimeoutRef.current = null
+      setAutoAdvanceCountdown(COUNTDOWN_SEC)
+    }, INACTIVITY_MS)
+    return () => {
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current)
+        inactivityTimeoutRef.current = null
+      }
+    }
+  }, [phase, fighter1, fighter2, autoPlaying])
+
+  useEffect(() => {
+    if (autoAdvanceCountdown === null || autoAdvanceCountdown <= 0) return
+    countdownIntervalRef.current = setInterval(() => {
+      setAutoAdvanceCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          if (prev === 1) {
+            setAutoPlaying(true) // 3초 후 자동 진행 시작 → 끝날 때까지 반복
+            const side = Math.random() < 0.5 ? 1 : 2
+            handleReactionRef.current(side, getRandomReaction())
+          }
+          return null
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current)
+        countdownIntervalRef.current = null
+      }
+    }
+  }, [autoAdvanceCountdown])
+
+  // 자동 진행: waiting일 때마다 한 턴씩 랜덤 반응 → 끝나면(ended) 중단
+  useEffect(() => {
+    if (!autoPlaying || !fighter1 || !fighter2) {
+      if (phase === 'ended') setAutoPlaying(false)
+      return
+    }
+    if (phase !== 'waiting') return
+    const t = setTimeout(() => {
+      const side = Math.random() < 0.5 ? 1 : 2
+      handleReactionRef.current(side, getRandomReaction())
+    }, 500)
+    return () => clearTimeout(t)
+  }, [autoPlaying, phase, fighter1, fighter2])
+
+  // 탭/앱 복귀 시 안내 문구 (3초간 표시)
+  const returnReminderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible' && phase === 'waiting') {
+        if (returnReminderTimeoutRef.current) clearTimeout(returnReminderTimeoutRef.current)
+        setShowReturnReminder(true)
+        returnReminderTimeoutRef.current = setTimeout(() => {
+          returnReminderTimeoutRef.current = null
+          setShowReturnReminder(false)
+        }, 3000)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      if (returnReminderTimeoutRef.current) {
+        clearTimeout(returnReminderTimeoutRef.current)
+        returnReminderTimeoutRef.current = null
+      }
+    }
+  }, [phase])
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -220,6 +315,7 @@ export default function BattleArena() {
 
   async function handleReaction(selectedSide: 1 | 2, reaction: ReactionType) {
     if (phase !== 'waiting' || !fighter1 || !fighter2) return
+    setAutoAdvanceCountdown(null) // 자동 진행 카운트다운 취소
     setPhase('generating')
 
     const attacker = selectedSide === 1 ? fighter1 : fighter2
@@ -367,6 +463,35 @@ export default function BattleArena() {
             <div className="text-6xl md:text-7xl font-black text-yellow-400 drop-shadow-2xl">
               🔥 CRITICAL!
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 무반응 30초 후: 3초 카운트다운 후 자동 진행 */}
+      <AnimatePresence>
+        {autoAdvanceCountdown !== null && phase === 'waiting' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="fixed bottom-24 left-4 right-4 z-20 mx-auto max-w-md rounded-xl bg-amber-500/95 px-4 py-3 text-center text-sm font-bold text-black shadow-lg"
+          >
+            ⏱️ {autoAdvanceCountdown}초 후 자동 진행됩니다
+            <span className="block text-xs font-normal text-black/80 mt-0.5">(반응을 선택하면 취소됩니다)</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 탭/앱 복귀 시 안내 */}
+      <AnimatePresence>
+        {showReturnReminder && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="fixed top-16 left-4 right-4 z-20 mx-auto max-w-md rounded-xl bg-blue-600/95 px-4 py-2.5 text-center text-sm font-bold text-white shadow-lg"
+          >
+            👋 반응을 선택해 주세요!
           </motion.div>
         )}
       </AnimatePresence>
@@ -613,13 +738,8 @@ export default function BattleArena() {
                 />
               </div>
 
-              {/* VS: 모바일에서만 위·아래 구분용 */}
-              <div className="order-2 flex md:hidden items-center justify-center py-0.5">
-                <span className="text-gray-500 font-black text-sm tracking-widest">⚔️ VS ⚔️</span>
-              </div>
-
               {/* 2번 AI = 채팅 오른쪽(파랑), 오른쪽 테두리·오른쪽 정렬 */}
-              <div className="order-3 md:order-2 rounded-xl border-r-4 border-blue-500 bg-blue-900/30 p-3 md:p-4">
+              <div className="order-2 rounded-xl border-r-4 border-blue-500 bg-blue-900/30 p-3 md:p-4">
                 <p className="text-blue-300/80 text-xs mb-1 text-right md:sr-only">채팅 오른쪽 →</p>
                 <MentalBar
                   name={fighter2.persona_name}

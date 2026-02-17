@@ -113,10 +113,10 @@ export default function BattleResult({
       {/* 공유 유도 버튼 3개 */}
       <div className="space-y-3">
         <button
-          onClick={onReplay}
+          onClick={onRevenge}
           className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all hover:scale-105"
         >
-          🔄 이 조합 다시 도전
+          ⚔️ 새 배틀 세우기
         </button>
 
         <button

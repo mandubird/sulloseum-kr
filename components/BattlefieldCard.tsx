@@ -23,20 +23,24 @@ export default function BattlefieldCard({ battlefield, onClick }: BattlefieldCar
       onClick={onClick}
     >
       <div
-        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${battlefield.gradient} p-6 shadow-2xl h-64 flex flex-col justify-between`}
+        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${battlefield.gradient} p-4 md:p-6 shadow-2xl min-h-[100px] md:h-64 flex flex-col justify-between`}
       >
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
         </div>
 
-        {/* Content */}
+        {/* Content: 모바일에서 아이콘·제목 한 줄로 공간 절약 */}
         <div className="relative z-10">
-          <div className="text-6xl mb-3">{battlefield.emoji}</div>
-          <h2 className="text-3xl font-display text-white mb-2">{battlefield.name}</h2>
-          <p className="text-white/80 text-sm font-medium">
-            {battlefield.topics.length}개의 떡밥 준비됨
-          </p>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl md:text-5xl shrink-0">{battlefield.emoji}</span>
+            <div className="min-w-0">
+              <h2 className="text-2xl md:text-3xl font-display text-white truncate">{battlefield.name}</h2>
+              <p className="text-white/80 text-xs md:text-sm font-medium">
+                {battlefield.topics.length}개의 떡밥 준비됨
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Sample Topics Preview */}
