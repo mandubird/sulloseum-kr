@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BATTLEFIELDS, MAIN_RANDOM_TOPICS } from '@/lib/battlefields'
-import BattlefieldCard from '@/components/BattlefieldCard'
 import BattleSetupModal from '@/components/BattleSetupModal'
 
 const MOTIVATION_TEXT = [
@@ -16,7 +15,7 @@ const MOTIVATION_TEXT = [
   '썰로세움은',
   '사람 대신 AI 페르소나가',
   '극단적인 입장을 연기하며',
-  '한국 사회의 다양한 가치관을 드러내는 실험 공간입니다.',
+  '다양한 가치관을 실험 관찰하는 공간입니다.',
   '',
   '이곳의 배틀은 누군가를 공격하기 위한 싸움이 아니라,',
   '생각의 차이를 안전하게 관찰하기 위한 장치입니다.',
@@ -49,41 +48,40 @@ export default function Home() {
           ⚔️ 썰로세움 ⚔️
         </h1>
         <p className="text-xl md:text-2xl text-white/90 font-medium">
-          AI 파이터들의 떡밥 배틀 아레나
+          AI 파이터들의 떡밥 배틀 관찰소
         </p>
         <p className="text-sm md:text-base text-white/70 mt-2">
           🧪 서로 다른 가치관을 실험하는 AI 배틀
           <br />
-          🎭 과장된 페르소나가 입장을 연기합니다.
+          🎭 과장된 AI 페르소나가 극단적으로 몰입 연기
         </p>
+        <p className="text-white/60 text-xs text-center mt-3 px-1">※ 본 배틀은 특정 세대나 실제 인물과 무관하며, 재미용 실험임을 밝힙니다. ※</p>
       </div>
 
-      {/* 본문 영역: flex-1로 남는 공간 채워서 푸터를 항상 화면 맨 아래로 */}
+      {/* 본문: 2x3 동일 크기 그리드 (연애·직장·게임 / 결혼·돈·배틀 게시판) */}
       <div className="flex-1 flex flex-col min-h-0">
-      {/* 모바일: 게시판 먼저 · 툭 튀어나오지 않게 섹션으로 감싸서 자연스럽게 */}
-      <div className="max-w-7xl mx-auto order-1 md:order-2 w-full shrink-0">
-        <section className="md:text-center py-4 md:py-0 md:mb-8">
-          <p className="text-white/60 text-xs text-center mb-2 px-1">※ 본 배틀은 AI가 설정된 입장을 연기합니다. ※</p>
+      <div className="max-w-7xl mx-auto w-full -mx-2 md:mx-auto px-2 md:px-0">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          {BATTLEFIELDS.map((bf) => (
+            <button
+              key={bf.id}
+              type="button"
+              onClick={() => handleBattlefieldClick(bf.id, undefined)}
+              className="flex flex-col items-center justify-center gap-2 min-h-[100px] md:min-h-[120px] rounded-2xl font-bold text-white transition-all
+                bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30"
+            >
+              <span className="text-3xl md:text-4xl">{bf.emoji}</span>
+              <span className="text-sm md:text-base">{bf.name}</span>
+            </button>
+          ))}
           <a
             href="/board"
-            className="inline-flex items-center justify-center gap-2 w-full md:w-auto px-5 py-3 rounded-xl font-bold transition-all
-              bg-white/5 hover:bg-white/15 text-white/95 border border-white/10"
+            className="flex flex-col items-center justify-center gap-2 min-h-[100px] md:min-h-[120px] rounded-2xl font-bold text-white transition-all
+              bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30"
           >
-            📋 배틀 게시판
+            <span className="text-3xl md:text-4xl">📋</span>
+            <span className="text-sm md:text-base">배틀 게시판</span>
           </a>
-        </section>
-      </div>
-
-      {/* Battlefield Gallery: 모바일에서 가로로 더 넓게 */}
-      <div className="max-w-7xl mx-auto order-2 md:order-1 w-full -mx-2 md:mx-auto px-2 md:px-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {BATTLEFIELDS.map((battlefield) => (
-            <BattlefieldCard
-              key={battlefield.id}
-              battlefield={battlefield}
-              onClick={() => handleBattlefieldClick(battlefield.id, undefined)}
-            />
-          ))}
         </div>
       </div>
 
@@ -142,10 +140,20 @@ export default function Home() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto border border-gray-700"
+              className="bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto border border-gray-700 relative"
             >
+              <button
+                type="button"
+                onClick={() => setIsMotivationOpen(false)}
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors z-10"
+                aria-label="닫기"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
               <div className="p-6 md:p-8">
-                <h2 className="text-xl font-bold text-white mb-6 text-center">
+                <h2 className="text-xl font-bold text-white mb-6 text-center pr-8">
                   왜 썰로세움을 만들었나요?
                 </h2>
                 <div className="space-y-3 text-white/90 text-sm md:text-base leading-relaxed">

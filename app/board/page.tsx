@@ -16,7 +16,7 @@ const MOTIVATION_TEXT = [
   '썰로세움은',
   '사람 대신 AI 페르소나가',
   '극단적인 입장을 연기하며',
-  '한국 사회의 다양한 가치관을 드러내는 실험 공간입니다.',
+  '다양한 가치관을 실험 관찰하는 공간입니다.',
   '',
   '이곳의 배틀은 누군가를 공격하기 위한 싸움이 아니라,',
   '생각의 차이를 안전하게 관찰하기 위한 장치입니다.',
@@ -179,7 +179,7 @@ function BattleBoardCard({
                 <p className="text-gray-500 text-xs">이 배틀에 리액션을 남겨보세요</p>
                 <div className="flex flex-wrap gap-2">
                   {REACTION_OPTIONS.map(({ key, label, emoji }) => (
-                    <button
+                                <button
                       key={key}
                       type="button"
                       onClick={(e) => onReaction(battle.battle_id, key, e)}
@@ -187,9 +187,7 @@ function BattleBoardCard({
                     >
                       <span>{emoji}</span>
                       <span>{label}</span>
-                      {reactions[key] > 0 && (
-                        <span className="text-white/60 text-xs">{(reactions as Record<string, number>)[key]}</span>
-                      )}
+                      <span className="text-white/60 text-xs min-w-[1rem]">{(reactions as Record<string, number>)[key] ?? 0}</span>
                     </button>
                   ))}
                 </div>
@@ -267,6 +265,10 @@ export default function BoardPage() {
   const handleReaction = async (battleId: string, reaction: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    const battle = battles.find((b) => b.battle_id === battleId)
+    const current = reactionCounts[battleId] ?? battle?.reactions ?? DEFAULT_REACTIONS
+    const nextCounts = { ...current, [reaction]: (current[reaction] ?? 0) + 1 }
+    setReactionCounts((prev) => ({ ...prev, [battleId]: nextCounts }))
     try {
       const res = await fetch('/api/battle-reaction', {
         method: 'POST',
@@ -278,7 +280,7 @@ export default function BoardPage() {
         setReactionCounts((prev) => ({ ...prev, [battleId]: data.reactions }))
       }
     } catch {
-      // ignore
+      // 낙관적 업데이트만 유지 (이미 숫자 올라간 상태)
     }
   }
 
@@ -425,10 +427,20 @@ export default function BoardPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto border border-gray-700"
+              className="bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto border border-gray-700 relative"
             >
+              <button
+                type="button"
+                onClick={() => setIsMotivationOpen(false)}
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors z-10"
+                aria-label="닫기"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
               <div className="p-6 md:p-8">
-                <h2 className="text-xl font-bold text-white mb-6 text-center">
+                <h2 className="text-xl font-bold text-white mb-6 text-center pr-8">
                   왜 썰로세움을 만들었나요?
                 </h2>
                 <div className="space-y-3 text-white/90 text-sm md:text-base leading-relaxed">
