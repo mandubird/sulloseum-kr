@@ -20,12 +20,13 @@ interface BattleResultProps {
   battleId: string
   onReplay: () => void
   onRevenge: () => void
+  onViewBoard: () => void
 }
 
 export default function BattleResult({
   winnerName, winnerEmoji, loserName, loserEmoji,
   winnerHp, mvpStatement, mvpDamage, battleId,
-  onReplay, onRevenge,
+  onReplay, onRevenge, onViewBoard,
 }: BattleResultProps) {
   const [copied, setCopied] = useState(false)
 
@@ -40,7 +41,7 @@ export default function BattleResult({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const shareKakao = async () => {
+  const handleResultShare = async () => {
     const url = getShareUrl()
     const full = `${shareText}\n\n${url}`
     if (navigator.share) {
@@ -58,22 +59,6 @@ export default function BattleResult({
       await navigator.clipboard.writeText(full)
       alert('복사됐어요. 카톡에 붙여넣기 하세요.')
     }
-  }
-
-  const shareX = () => {
-    const url = getShareUrl()
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText + '\n\n' + url)}`, '_blank')
-  }
-
-  const shareInstagram = async () => {
-    const url = getShareUrl()
-    await navigator.clipboard.writeText(`${shareText}\n\n${url}`)
-    alert('복사됐어요. 인스타 스토리/DM에 붙여넣기 하세요.')
-  }
-
-  const shareSms = () => {
-    const url = getShareUrl()
-    window.location.href = `sms:?body=${encodeURIComponent(shareText + '\n\n' + url)}`
   }
 
   return (
@@ -133,31 +118,19 @@ export default function BattleResult({
           {copied ? '✅ 링크 복사됨!' : '📤 친구에게 도전 보내기'}
         </button>
 
-        <p className="text-gray-400 text-sm font-bold mt-4 mb-2">📢 결과 공유하기</p>
-        <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={handleResultShare}
+          className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-gray-900 rounded-xl font-bold transition-all"
+        >
+          📢 결과 공유하기
+        </button>
+
+        <div className="mt-6 pt-4 border-t border-gray-600">
           <button
-            onClick={shareKakao}
-            className="py-3 bg-yellow-500 hover:bg-yellow-400 text-gray-900 rounded-xl font-bold transition-all text-sm"
+            onClick={onViewBoard}
+            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-all border-2 border-emerald-500/50"
           >
-            💬 카톡
-          </button>
-          <button
-            onClick={shareX}
-            className="py-3 bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 rounded-xl font-bold transition-all text-sm"
-          >
-            𝕏 X
-          </button>
-          <button
-            onClick={shareInstagram}
-            className="py-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white rounded-xl font-bold transition-all text-sm"
-          >
-            📸 인스타
-          </button>
-          <button
-            onClick={shareSms}
-            className="py-3 bg-green-700 hover:bg-green-600 text-white rounded-xl font-bold transition-all text-sm"
-          >
-            📱 문자
+            👀 다른 배틀 구경하기
           </button>
         </div>
       </div>

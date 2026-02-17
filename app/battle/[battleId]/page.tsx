@@ -624,6 +624,7 @@ export default function BattleArena() {
                       battleId={battleId}
                       onReplay={() => router.refresh()}
                       onRevenge={() => router.push('/')}
+                      onViewBoard={() => router.push('/board')}
                     />
                   </div>
                 </motion.div>
@@ -669,6 +670,7 @@ export default function BattleArena() {
                 battleId={battleId}
                 onReplay={() => router.refresh()}
                 onRevenge={() => router.push('/')}
+                onViewBoard={() => router.push('/board')}
               />
             </div>
           )}
