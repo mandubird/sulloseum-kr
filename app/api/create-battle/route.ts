@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
         participants: { fighter1: fighter1Id, fighter2: fighter2Id },
         combination_key: combinationKey,
         status: 'active',
-        hp1: 60,
-        hp2: 60,
+        hp1: 50,
+        hp2: 50,
         max_turns: 2,
       })
       .select()

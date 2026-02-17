@@ -3,10 +3,10 @@ import { motion } from 'framer-motion'
 import { ReactionType } from '@/lib/damage'
 
 const BUTTONS: { type: ReactionType; emoji: string; damage: string; color: string }[] = [
-  { type: '공격', emoji: '⚔️', damage: '-12', color: 'bg-red-700 hover:bg-red-600' },
+  { type: '공격', emoji: '⚔️', damage: '-22', color: 'bg-red-700 hover:bg-red-600' },
   { type: '방어', emoji: '🛡️', damage: '50%↓', color: 'bg-blue-700 hover:bg-blue-600' },
-  { type: '병맛', emoji: '🤪', damage: '0~20', color: 'bg-yellow-600 hover:bg-yellow-500' },
-  { type: '감정', emoji: '😡', damage: '-10', color: 'bg-pink-700 hover:bg-pink-600' },
+  { type: '병맛', emoji: '🤪', damage: '4~21', color: 'bg-yellow-600 hover:bg-yellow-500' },
+  { type: '감정', emoji: '😡', damage: '-18', color: 'bg-pink-700 hover:bg-pink-600' },
 ]
 
 interface ReactionButtonsProps {

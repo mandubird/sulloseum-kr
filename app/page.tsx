@@ -17,8 +17,8 @@ export default function Home() {
   return (
     <main className="min-h-screen p-8">
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-12 text-center">
-        <h1 className="text-6xl md:text-8xl font-display text-white mb-4 drop-shadow-2xl animate-bounce-subtle">
+      <div className="max-w-7xl mx-auto mb-12 text-center px-1">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-8xl font-display text-white mb-4 drop-shadow-2xl animate-bounce-subtle whitespace-nowrap">
           ⚔️ 썰로세움 ⚔️
         </h1>
         <p className="text-xl md:text-2xl text-white/90 font-medium">

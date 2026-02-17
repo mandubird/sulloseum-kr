@@ -572,10 +572,12 @@ export default function BattleArena() {
             <div ref={chatEndRef} />
           </div>
 
-          {/* 두 AI 하단에 각각 "관객 반응을 선택하세요!" 깜빡임 */}
+          {/* 두 AI 하단: 채팅과 컬러 통일(좌=회색, 우=파랑) + 모바일에서만 VS */}
           <div className="max-w-2xl mx-auto w-full px-4 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              {/* 1번 AI = 채팅 왼쪽(회색) */}
+              <div className="order-1 rounded-xl border-l-4 border-gray-400 bg-gray-800/40 p-4">
+                <p className="text-gray-400 text-xs mb-1 md:sr-only">← 채팅 왼쪽</p>
                 <MentalBar
                   name={fighter1.persona_name}
                   emoji={fighter1.avatar_emoji}
@@ -591,7 +593,15 @@ export default function BattleArena() {
                   disabled={phase !== 'waiting'}
                 />
               </div>
-              <div>
+
+              {/* VS: 모바일에서만 위·아래 구분용으로 표시 */}
+              <div className="order-2 flex md:hidden items-center justify-center py-1">
+                <span className="text-gray-500 font-black text-base tracking-widest">⚔️ VS ⚔️</span>
+              </div>
+
+              {/* 2번 AI = 채팅 오른쪽(파랑) */}
+              <div className="order-3 md:order-2 rounded-xl border-l-4 border-blue-500 bg-blue-900/30 p-4">
+                <p className="text-blue-300/80 text-xs mb-1 md:sr-only">채팅 오른쪽 →</p>
                 <MentalBar
                   name={fighter2.persona_name}
                   emoji={fighter2.avatar_emoji}

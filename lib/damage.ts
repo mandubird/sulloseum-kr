@@ -22,11 +22,11 @@ export function calculateDamage(
   let newIsDefending1 = false
   let newIsDefending2 = false
 
-  // 배틀 단축: 데미지 상향 (채팅 줄 수·비용·시간 절감)
+  // 배틀 단축: 데미지 추가 상향 (대화 더 짧게)
   switch (reaction) {
     case '공격':
       isCritical = Math.random() < 0.2
-      baseDamage = isCritical ? 28 : 18
+      baseDamage = isCritical ? 32 : 22
       break
     case '방어':
       baseDamage = 0
@@ -34,10 +34,10 @@ export function calculateDamage(
       else newIsDefending2 = true
       break
     case '병맛':
-      baseDamage = 2 + Math.floor(Math.random() * 20) // 2~21
+      baseDamage = 4 + Math.floor(Math.random() * 18) // 4~21
       break
     case '감정':
-      baseDamage = 15
+      baseDamage = 18
       break
   }
 

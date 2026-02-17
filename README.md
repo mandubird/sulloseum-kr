@@ -66,6 +66,8 @@ Sulloseum_KR/
 
 ## 📤 GitHub에 올리기 / 업데이트하기
 
+> **헷갈리면 여기 보기:** [**GitHub_업데이트_메뉴얼.md**](./GitHub_업데이트_메뉴얼.md) ← 코드 수정 후 GitHub에 복사(푸시)하는 방법 정리해 둔 메뉴얼입니다.
+
 저장소가 이미 있다면 (예: [github.com/mandubird/sulloseum-kr](https://github.com/mandubird/sulloseum-kr)) 로컬에서 아래만 하면 됩니다.
 
 ### 처음 한 번만 (로컬에 Git이 아직 없을 때)
