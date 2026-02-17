@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BATTLEFIELDS, MAIN_RANDOM_TOPICS } from '@/lib/battlefields'
 import BattlefieldCard from '@/components/BattlefieldCard'
@@ -59,23 +60,9 @@ export default function Home() {
         <p className="text-white/60 text-xs text-center mt-3 px-1">※ 본 배틀은 특정 세대나 실제 인물과 무관하며, 재미용 실험임을 밝힙니다. ※</p>
       </div>
 
-      {/* 본문 영역 */}
+      {/* 본문: 전장 카드 5개 + 배틀 게시판(PC에서 돈 옆 6번째) */}
       <div className="flex-1 flex flex-col min-h-0">
-      {/* 배틀 게시판 링크 */}
-      <div className="max-w-7xl mx-auto order-1 md:order-2 w-full shrink-0">
-        <section className="md:text-center py-4 md:py-0 md:mb-8">
-          <a
-            href="/board"
-            className="inline-flex items-center justify-center gap-2 w-full md:w-auto px-5 py-3 rounded-xl font-bold transition-all
-              bg-white/5 hover:bg-white/15 text-white/95 border border-white/10"
-          >
-            📋 배틀 게시판
-          </a>
-        </section>
-      </div>
-
-      {/* 전장 카드 5개: xx개의 떡밥 준비됨 + 인기 떡밥 */}
-      <div className="max-w-7xl mx-auto order-2 md:order-1 w-full -mx-2 md:mx-auto px-2 md:px-0">
+      <div className="max-w-7xl mx-auto w-full -mx-2 md:mx-auto px-2 md:px-0">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {BATTLEFIELDS.map((battlefield) => (
             <BattlefieldCard
@@ -84,6 +71,32 @@ export default function Home() {
               onClick={() => handleBattlefieldClick(battlefield.id, undefined)}
             />
           ))}
+          {/* 배틀 게시판: 전장 카드와 동일 크기, PC에서 돈 옆 배치 */}
+          <Link href="/board" className="block">
+            <motion.div
+              whileHover={{ scale: 1.05, rotate: 1 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-600 to-slate-800 p-4 md:p-6 min-h-[100px] md:h-64 flex flex-col justify-between border-2 border-white/40 shadow-xl shadow-black/40 cursor-pointer"
+            >
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-3xl md:text-5xl shrink-0">📋</span>
+                  <div className="min-w-0">
+                    <h2 className="text-2xl md:text-3xl font-display text-white truncate">배틀 게시판</h2>
+                    <p className="text-white/80 text-xs md:text-sm font-medium">지난 배틀 보기</p>
+                  </div>
+                </div>
+              </div>
+              <div className="relative z-10">
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 text-white/90 text-xs">
+                  <p className="font-medium mb-1">🔥 완료된 배틀</p>
+                  <p className="truncate">리액션·조회수 확인하기</p>
+                </div>
+              </div>
+              <div className="absolute inset-0 rounded-3xl border-4 border-white/0 hover:border-white/30 transition-all duration-300" />
+            </motion.div>
+          </Link>
         </div>
       </div>
 
