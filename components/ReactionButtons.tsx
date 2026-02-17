@@ -15,35 +15,37 @@ interface ReactionButtonsProps {
   fighterEmoji: string
   onReaction: (side: 1 | 2, reaction: ReactionType) => void
   disabled: boolean
+  compact?: boolean
 }
 
-export default function ReactionButtons({ fighterSide, fighterName, fighterEmoji, onReaction, disabled }: ReactionButtonsProps) {
+export default function ReactionButtons({ fighterSide, fighterName, fighterEmoji, onReaction, disabled, compact }: ReactionButtonsProps) {
   return (
     <motion.div
       animate={disabled ? { opacity: 0.4 } : { opacity: [1, 0.6, 1] }}
       transition={disabled ? {} : { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-      className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 mb-3"
+      className={`bg-white/10 backdrop-blur-sm rounded-xl md:rounded-2xl mb-2 md:mb-3 ${compact ? 'p-2 md:p-4' : 'p-4'}`}
     >
-      <p className="text-white text-sm font-bold mb-2 text-center animate-pulse">
-        🎮 관객 반응을 선택하세요!
+      <p className={`text-white font-bold text-center animate-pulse ${compact ? 'text-xs mb-1 md:text-sm md:mb-2' : 'text-sm mb-2'}`}>
+        🎮 관객 반응
       </p>
-      <p className="text-gray-300 text-xs mb-3 text-center">
+      <p className={`text-gray-300 text-center ${compact ? 'text-[10px] mb-1.5 md:text-xs md:mb-3' : 'text-xs mb-3'}`}>
         {fighterEmoji} {fighterName}
       </p>
-      <div className="grid grid-cols-4 gap-2">
+      <div className={`grid grid-cols-4 ${compact ? 'gap-1 md:gap-2' : 'gap-2'}`}>
         {BUTTONS.map((btn) => (
           <button
             key={btn.type}
             onClick={() => !disabled && onReaction(fighterSide, btn.type)}
             disabled={disabled}
-            className={`${btn.color} text-white rounded-xl py-3 px-1
-              flex flex-col items-center gap-1
+            className={`${btn.color} text-white rounded-lg md:rounded-xl px-0.5
+              flex flex-col items-center
               transition-transform hover:scale-105 active:scale-95
-              disabled:opacity-40 disabled:cursor-not-allowed`}
+              disabled:opacity-40 disabled:cursor-not-allowed
+              ${compact ? 'py-1.5 gap-0.5 md:py-3 md:gap-1' : 'py-3 gap-1'}`}
           >
-            <span className="text-xl">{btn.emoji}</span>
-            <span className="text-xs font-bold">{btn.type}</span>
-            <span className="text-xs opacity-75">{btn.damage}</span>
+            <span className={compact ? 'text-base md:text-xl' : 'text-xl'}>{btn.emoji}</span>
+            <span className={compact ? 'text-[10px] md:text-xs font-bold' : 'text-xs font-bold'}>{btn.type}</span>
+            <span className={`opacity-75 ${compact ? 'text-[8px] md:text-xs hidden sm:inline' : 'text-xs'}`}>{btn.damage}</span>
           </button>
         ))}
       </div>

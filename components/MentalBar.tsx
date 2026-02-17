@@ -7,6 +7,7 @@ interface MentalBarProps {
   currentHp: number
   isDefending: boolean
   side: 'left' | 'right'
+  compact?: boolean
 }
 
 const getBarColor = (hp: number) => {
@@ -15,19 +16,19 @@ const getBarColor = (hp: number) => {
   return 'bg-red-500 animate-pulse'
 }
 
-export default function MentalBar({ name, emoji, currentHp, isDefending, side }: MentalBarProps) {
+export default function MentalBar({ name, emoji, currentHp, isDefending, side, compact }: MentalBarProps) {
   return (
-    <div className={`flex items-center gap-3 ${side === 'right' ? 'flex-row-reverse' : ''}`}>
-      <span className="text-4xl flex-shrink-0">{emoji}</span>
-      <div className="flex-1">
-        <div className={`flex justify-between mb-1 ${side === 'right' ? 'flex-row-reverse' : ''}`}>
-          <span className="font-bold text-white text-sm">{name}</span>
-          <span className="text-sm text-gray-300 flex items-center gap-1">
+    <div className={`flex items-center gap-2 md:gap-3 ${side === 'right' ? 'flex-row-reverse' : ''}`}>
+      <span className={`flex-shrink-0 ${compact ? 'text-2xl md:text-4xl' : 'text-4xl'}`}>{emoji}</span>
+      <div className="flex-1 min-w-0">
+        <div className={`flex justify-between mb-0.5 md:mb-1 ${side === 'right' ? 'flex-row-reverse' : ''}`}>
+          <span className={`font-bold text-white truncate ${compact ? 'text-xs md:text-sm' : 'text-sm'}`}>{name}</span>
+          <span className={`text-gray-300 flex items-center gap-1 shrink-0 ${compact ? 'text-xs md:text-sm' : 'text-sm'}`}>
             🧠 {currentHp}%
             {isDefending && <span className="text-blue-400 text-xs animate-pulse">🛡️</span>}
           </span>
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-5 overflow-hidden">
+        <div className={`w-full bg-gray-700 rounded-full overflow-hidden ${compact ? 'h-3 md:h-5' : 'h-5'}`}>
           <motion.div
             className={`h-full rounded-full ${getBarColor(currentHp)}`}
             animate={{ width: `${Math.max(0, currentHp)}%` }}

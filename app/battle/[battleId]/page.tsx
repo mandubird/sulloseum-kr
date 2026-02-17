@@ -54,7 +54,7 @@ export default function BattleArena() {
   const [replayStep, setReplayStep] = useState(0)
   const [resultExpanded, setResultExpanded] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
-
+  const battleTopRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (battleId) loadBattle()
@@ -62,6 +62,18 @@ export default function BattleArena() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, replayStep])
+
+  // 배틀 시작 시 상단(주제)부터 보이도록: 로딩 끝나면 한 번, 첫 두 대사 나온 뒤 한 번
+  useEffect(() => {
+    if (phase !== 'loading' && topic) {
+      window.scrollTo(0, 0)
+    }
+  }, [phase, topic])
+  useEffect(() => {
+    if (phase === 'waiting' && messages.length >= 2) {
+      battleTopRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' })
+    }
+  }, [phase, messages.length])
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -359,19 +371,19 @@ export default function BattleArena() {
         )}
       </AnimatePresence>
 
-      <div className="p-4 bg-black/30 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto flex justify-between items-center">
+      <div ref={battleTopRef} className="p-3 md:p-4 bg-black/40 backdrop-blur sticky top-0 z-10 border-b border-white/10">
+        <div className="max-w-2xl mx-auto flex justify-between items-center gap-2">
           <button
             onClick={() => router.push(phase === 'ended' ? '/board' : '/')}
-            className="text-white/60 hover:text-white text-sm"
+            className="text-white/60 hover:text-white text-sm shrink-0"
           >
             ← {phase === 'ended' ? '목록' : '나가기'}
           </button>
-          <p className="text-white font-bold text-center flex-1 mx-4 truncate text-sm md:text-base">
+          <p className="text-white font-black text-center flex-1 mx-2 min-w-0 text-base md:text-lg leading-tight">
             ⚔️ {topic}
           </p>
           {phase !== 'ended' && (
-            <span className="text-white/60 text-xs">턴 {currentTurn}</span>
+            <span className="text-white/60 text-xs shrink-0">턴 {currentTurn}</span>
           )}
         </div>
       </div>
@@ -572,11 +584,16 @@ export default function BattleArena() {
             <div ref={chatEndRef} />
           </div>
 
-          {/* 두 AI 하단: 채팅과 컬러 통일(좌=회색, 우=파랑) + 모바일에서만 VS */}
-          <div className="max-w-2xl mx-auto w-full px-4 pb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 첫 두 대사 아래: 안내 문구 먼저, 그 다음 두 AI 블록 */}
+          <div className="max-w-2xl mx-auto w-full px-3 md:px-4 pb-6">
+            {phase === 'waiting' && messages.length >= 2 && (
+              <p className="text-white font-bold text-center py-3 text-sm md:text-base animate-pulse">
+                둘 중 원하는 관객 반응을 선택하세요!
+              </p>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
               {/* 1번 AI = 채팅 왼쪽(회색) */}
-              <div className="order-1 rounded-xl border-l-4 border-gray-400 bg-gray-800/40 p-4">
+              <div className="order-1 rounded-xl border-l-4 border-gray-400 bg-gray-800/40 p-3 md:p-4">
                 <p className="text-gray-400 text-xs mb-1 md:sr-only">← 채팅 왼쪽</p>
                 <MentalBar
                   name={fighter1.persona_name}
@@ -584,6 +601,7 @@ export default function BattleArena() {
                   currentHp={hp1}
                   isDefending={isDefending1}
                   side="left"
+                  compact
                 />
                 <ReactionButtons
                   fighterSide={1}
@@ -591,23 +609,25 @@ export default function BattleArena() {
                   fighterEmoji={fighter1.avatar_emoji}
                   onReaction={handleReaction}
                   disabled={phase !== 'waiting'}
+                  compact
                 />
               </div>
 
-              {/* VS: 모바일에서만 위·아래 구분용으로 표시 */}
-              <div className="order-2 flex md:hidden items-center justify-center py-1">
-                <span className="text-gray-500 font-black text-base tracking-widest">⚔️ VS ⚔️</span>
+              {/* VS: 모바일에서만 위·아래 구분용 */}
+              <div className="order-2 flex md:hidden items-center justify-center py-0.5">
+                <span className="text-gray-500 font-black text-sm tracking-widest">⚔️ VS ⚔️</span>
               </div>
 
-              {/* 2번 AI = 채팅 오른쪽(파랑) */}
-              <div className="order-3 md:order-2 rounded-xl border-l-4 border-blue-500 bg-blue-900/30 p-4">
-                <p className="text-blue-300/80 text-xs mb-1 md:sr-only">채팅 오른쪽 →</p>
+              {/* 2번 AI = 채팅 오른쪽(파랑), 오른쪽 테두리·오른쪽 정렬 */}
+              <div className="order-3 md:order-2 rounded-xl border-r-4 border-blue-500 bg-blue-900/30 p-3 md:p-4">
+                <p className="text-blue-300/80 text-xs mb-1 text-right md:sr-only">채팅 오른쪽 →</p>
                 <MentalBar
                   name={fighter2.persona_name}
                   emoji={fighter2.avatar_emoji}
                   currentHp={hp2}
                   isDefending={isDefending2}
                   side="right"
+                  compact
                 />
                 <ReactionButtons
                   fighterSide={2}
@@ -615,6 +635,7 @@ export default function BattleArena() {
                   fighterEmoji={fighter2.avatar_emoji}
                   onReaction={handleReaction}
                   disabled={phase !== 'waiting'}
+                  compact
                 />
               </div>
             </div>
