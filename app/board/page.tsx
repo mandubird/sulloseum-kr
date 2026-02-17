@@ -37,6 +37,7 @@ const REACTION_OPTIONS = [
 ]
 
 const DEFAULT_REACTIONS = { 공감: 0, 비꼼: 0, 병맛: 0, 폭발: 0 }
+const REACTION_VOTED_KEY = 'sulloseum_reaction_voted'
 
 interface BattleItem {
   battle_id: string
@@ -79,6 +80,7 @@ function BattleBoardCard({
   getReactions,
   onReaction,
   onCopyLink,
+  hasVoted = false,
 }: {
   battle: BattleItem
   agentMap: Record<string, { persona_name: string; avatar_emoji: string }>
@@ -87,6 +89,7 @@ function BattleBoardCard({
   getReactions: (b: BattleItem) => Record<string, number>
   onReaction: (battleId: string, reaction: string, e: React.MouseEvent) => void
   onCopyLink: (battleId: string, e: React.MouseEvent) => void
+  hasVoted?: boolean
 }) {
   const f1 = battle.participants && agentMap[battle.participants.fighter1]
   const f2 = battle.participants && agentMap[battle.participants.fighter2]
