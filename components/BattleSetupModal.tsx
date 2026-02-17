@@ -130,7 +130,7 @@ export default function BattleSetupModal({ battlefieldId, initialTopic, onClose 
                   <textarea
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
-                    placeholder="예: 깻잎은 바람인가?"
+                    placeholder={battlefield?.topics[0] ? `예: ${battlefield.topics[0]}` : '예: 깻잎은 바람인가?'}
                     className="w-full px-3 py-2 md:px-4 md:py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none resize-none text-base"
                     rows={2}
                   />
