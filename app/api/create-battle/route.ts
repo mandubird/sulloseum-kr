@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       fighter1Name: f1.persona_name, fighter1Desc: f1.description || '',
       fighter2Name: f2.persona_name, fighter2Desc: f2.description || '',
       topic,
+      battlefield: battlefield || 'work',
     })
 
     // 5. 첫 두 대사만 rounds에 저장, 배틀은 active 유지

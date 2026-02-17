@@ -38,6 +38,7 @@ export default function BattleArena() {
   const [fighter1, setFighter1] = useState<FighterInfo | null>(null)
   const [fighter2, setFighter2] = useState<FighterInfo | null>(null)
   const [topic, setTopic] = useState('')
+  const [battlefield, setBattlefield] = useState('work')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [hp1, setHp1] = useState(100)
   const [hp2, setHp2] = useState(100)
@@ -188,6 +189,7 @@ export default function BattleArena() {
       return
     }
     setTopic(battle.topic_text)
+    setBattlefield(battle.battlefield || 'work')
 
     const p = battle.participants as { fighter1: string; fighter2: string }
     const [
@@ -276,11 +278,11 @@ export default function BattleArena() {
         setPhase('waiting')
       }
     } else {
-      await startBattle(f1, f2, battle.topic_text)
+      await startBattle(f1, f2, battle.topic_text, battle.battlefield || 'work')
     }
   }
 
-  async function startBattle(f1: FighterInfo, f2: FighterInfo, topicText: string) {
+  async function startBattle(f1: FighterInfo, f2: FighterInfo, topicText: string, battleField: string = 'work') {
     const res = await fetch('/api/generate-first-statements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -288,6 +290,7 @@ export default function BattleArena() {
         topic: topicText,
         fighter1Id: f1.agent_id,
         fighter2Id: f2.agent_id,
+        battlefield: battleField,
       }),
     })
     const data = await res.json().catch(() => ({}))
@@ -333,6 +336,8 @@ export default function BattleArena() {
         lastDefenderStatement,
         turnNumber: currentTurn,
         isFirstTurn: false,
+        battlefield,
+        previousStatements: messages.map((m) => m.text),
       }),
     })
     const turnData = await res.json().catch(() => ({}))

@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
       lastDefenderStatement,
       turnNumber,
       isFirstTurn,
+      battlefield,
+      previousStatements,
     } = body as {
       topic: string
       attackerId: string
@@ -22,6 +24,8 @@ export async function POST(req: NextRequest) {
       lastDefenderStatement: string
       turnNumber: number
       isFirstTurn: boolean
+      battlefield?: string
+      previousStatements?: string[]
     }
     const [{ data: attacker }, { data: defender }] = await Promise.all([
       supabase.from('agents').select('persona_name, description').eq('agent_id', attackerId).single(),
@@ -38,6 +42,8 @@ export async function POST(req: NextRequest) {
       lastDefenderStatement: lastDefenderStatement || '',
       turnNumber,
       isFirstTurn,
+      battlefield,
+      previousStatements: previousStatements ?? [],
     })
     return NextResponse.json(result)
   } catch (err) {
