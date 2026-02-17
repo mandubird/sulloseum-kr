@@ -3,8 +3,8 @@ export const BATTLEFIELDS = [
     id: 'love',
     name: '연애',
     emoji: '💕',
-    color: '#FF6B9D',
-    gradient: 'from-pink-500 to-rose-400',
+    color: '#E91E63',
+    gradient: 'from-rose-600 to-pink-500',
     topics: [
       '전 애인이랑 연락',
       '카톡 읽씹',
@@ -109,8 +109,8 @@ export const BATTLEFIELDS = [
     id: 'work',
     name: '직장',
     emoji: '💼',
-    color: '#4A90E2',
-    gradient: 'from-blue-500 to-indigo-400',
+    color: '#0EA5E9',
+    gradient: 'from-sky-600 to-blue-500',
     topics: [
       '회식은 업무 시간인가?',
       '퇴근 10분 전 업무 지시',
@@ -426,8 +426,8 @@ export const BATTLEFIELDS = [
     id: 'money',
     name: '돈',
     emoji: '💰',
-    color: '#F39C12',
-    gradient: 'from-yellow-500 to-orange-400',
+    color: '#F59E0B',
+    gradient: 'from-amber-500 to-orange-500',
     topics: [
       '월급 300 적은가?',
       '월급 500면 충분?',
