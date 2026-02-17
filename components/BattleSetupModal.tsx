@@ -101,41 +101,45 @@ export default function BattleSetupModal({ battlefieldId, onClose }: BattleSetup
             <X className="w-6 h-6" />
           </button>
 
-          {/* Header */}
-          <div className={`bg-gradient-to-r ${battlefield?.gradient} p-8 text-white`}>
-            <div className="text-5xl mb-3">{battlefield?.emoji}</div>
-            <h2 className="text-3xl font-display mb-2">{battlefield?.name} 전장</h2>
-            <p className="text-white/90">떡밥을 던지고 파이터를 선택하세요!</p>
+          {/* Header: 모바일에서 여백 축소해 하단 버튼이 보이도록 */}
+          <div className={`bg-gradient-to-r ${battlefield?.gradient} px-5 pt-4 pb-4 md:p-8 text-white`}>
+            <div className="flex items-center gap-3">
+              <span className="text-3xl md:text-5xl shrink-0">{battlefield?.emoji}</span>
+              <div>
+                <h2 className="text-xl md:text-3xl font-display">{battlefield?.name} 전장</h2>
+                <p className="text-white/90 text-sm md:text-base">떡밥을 던지고 파이터를 선택하세요!</p>
+              </div>
+            </div>
           </div>
 
           {/* Content */}
-          <div className="p-8">
+          <div className="p-4 md:p-8">
             {step === 1 ? (
               // Step 1: Topic Input
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <div>
-                  <label className="block text-lg font-bold mb-3 text-gray-800">
-                    <Sparkles className="inline w-5 h-5 mr-2" />
+                  <label className="block text-base md:text-lg font-bold mb-2 text-gray-800">
+                    <Sparkles className="inline w-4 h-4 md:w-5 md:h-5 mr-2" />
                     떡밥 주제를 입력하세요
                   </label>
                   <textarea
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                     placeholder="예: 깻잎은 바람인가?"
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none resize-none text-lg"
-                    rows={3}
+                    className="w-full px-3 py-2 md:px-4 md:py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none resize-none text-base"
+                    rows={2}
                   />
                 </div>
 
                 {/* Suggested Topics */}
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-3">💡 추천 떡밥:</p>
-                  <div className="grid grid-cols-1 gap-2">
+                  <p className="text-sm font-medium text-gray-600 mb-2">💡 추천 떡밥:</p>
+                  <div className="grid grid-cols-1 gap-1.5">
                     {battlefield?.topics.slice(0, 3).map((suggestedTopic, idx) => (
                       <button
                         key={idx}
                         onClick={() => setTopic(suggestedTopic)}
-                        className="text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors"
+                        className="text-left px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs md:text-sm transition-colors"
                       >
                         {suggestedTopic}
                       </button>
@@ -143,8 +147,8 @@ export default function BattleSetupModal({ battlefieldId, onClose }: BattleSetup
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3">
+                {/* Action Buttons: 모바일에서 바로 보이도록 */}
+                <div className="flex gap-2 md:gap-3 pt-1">
                   <button
                     onClick={handleRandomTopic}
                     className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-bold transition-colors"
