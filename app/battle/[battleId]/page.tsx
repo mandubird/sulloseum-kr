@@ -1,0 +1,616 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
+import { supabase } from '@/lib/supabase'
+import { calculateDamage, ReactionType } from '@/lib/damage'
+import MentalBar from '@/components/MentalBar'
+import ChatBubble from '@/components/ChatBubble'
+import ReactionButtons from '@/components/ReactionButtons'
+import BattleResult from '@/components/BattleResult'
+
+interface ChatMessage {
+  id: string
+  side: 1 | 2
+  agentName: string
+  agentEmoji: string
+  text: string
+  reaction?: ReactionType
+  damage?: number
+  isCritical?: boolean
+}
+
+interface FighterInfo {
+  agent_id: string
+  persona_name: string
+  avatar_emoji: string
+  description: string
+}
+
+export default function BattleArena() {
+  const params = useParams()
+  const searchParams = useSearchParams()
+  const battleId = (params?.battleId as string) ?? ''
+  const router = useRouter()
+  const isFromBoard = searchParams.get('from') === 'board'
+
+  const [fighter1, setFighter1] = useState<FighterInfo | null>(null)
+  const [fighter2, setFighter2] = useState<FighterInfo | null>(null)
+  const [topic, setTopic] = useState('')
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [hp1, setHp1] = useState(100)
+  const [hp2, setHp2] = useState(100)
+  const [isDefending1, setIsDefending1] = useState(false)
+  const [isDefending2, setIsDefending2] = useState(false)
+  const [phase, setPhase] = useState<'loading' | 'waiting' | 'generating' | 'ended'>('loading')
+  const [currentTurn, setCurrentTurn] = useState(1)
+  const [lastStatement1, setLastStatement1] = useState('')
+  const [lastStatement2, setLastStatement2] = useState('')
+  const [criticalVisible, setCriticalVisible] = useState(false)
+  const [winnerSide, setWinnerSide] = useState<1 | 2 | null>(null)
+  const [mvpStatement, setMvpStatement] = useState('')
+  const [mvpDamage, setMvpDamage] = useState(0)
+  const [replayStep, setReplayStep] = useState(0)
+  const [resultExpanded, setResultExpanded] = useState(false)
+  const chatEndRef = useRef<HTMLDivElement>(null)
+
+
+  useEffect(() => {
+    if (battleId) loadBattle()
+  }, [battleId])
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, replayStep])
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+  const addMessage = (msg: Omit<ChatMessage, 'id'>) => {
+    setMessages((prev) => [...prev, { ...msg, id: `${Date.now()}-${Math.random()}` }])
+  }
+
+  async function loadBattle() {
+    const { data: battle, error } = await supabase
+      .from('battles')
+      .select('*')
+      .eq('battle_id', battleId)
+      .single()
+
+    if (error || !battle) {
+      router.push('/')
+      return
+    }
+    setTopic(battle.topic_text)
+
+    const p = battle.participants as { fighter1: string; fighter2: string }
+    const [
+      { data: f1 },
+      { data: f2 },
+    ] = await Promise.all([
+      supabase
+        .from('agents')
+        .select('agent_id, persona_name, avatar_emoji, description')
+        .eq('agent_id', p.fighter1)
+        .single(),
+      supabase
+        .from('agents')
+        .select('agent_id, persona_name, avatar_emoji, description')
+        .eq('agent_id', p.fighter2)
+        .single(),
+    ])
+
+    if (!f1 || !f2) return
+    setFighter1(f1)
+    setFighter2(f2)
+
+    const { data: rounds } = await supabase
+      .from('rounds')
+      .select('*')
+      .eq('battle_id', battleId)
+      .order('created_at', { ascending: true })
+
+    if (rounds && rounds.length > 0) {
+      const initialMessages: ChatMessage[] = []
+      let latestHp1 = 100,
+        latestHp2 = 100
+      const fighter1Id = f1.agent_id
+      const fighter2Id = f2.agent_id
+
+      for (const round of rounds) {
+        const side: 1 | 2 = round.agent_id === fighter1Id ? 1 : 2
+        const name = side === 1 ? f1.persona_name : f2.persona_name
+        const emoji = side === 1 ? f1.avatar_emoji : f2.avatar_emoji
+        initialMessages.push({
+          id: `r-${round.round_id}-a`,
+          side,
+          agentName: name,
+          agentEmoji: emoji,
+          text: round.statement_text,
+          reaction: round.user_reaction,
+          damage: round.damage,
+          isCritical: round.is_critical,
+        })
+        if (round.counter_statement) {
+          const counterSide: 1 | 2 = side === 1 ? 2 : 1
+          const counterName = counterSide === 1 ? f1.persona_name : f2.persona_name
+          const counterEmoji = counterSide === 1 ? f1.avatar_emoji : f2.avatar_emoji
+          initialMessages.push({
+            id: `r-${round.round_id}-c`,
+            side: counterSide,
+            agentName: counterName,
+            agentEmoji: counterEmoji,
+            text: round.counter_statement,
+          })
+        }
+        if (round.hp1_after != null) {
+          latestHp1 = round.hp1_after
+          latestHp2 = round.hp2_after
+        }
+      }
+      setMessages(initialMessages)
+      setHp1(latestHp1)
+      setHp2(latestHp2)
+      if (initialMessages.length >= 2) {
+        const last1 = initialMessages.filter((m) => m.side === 1).pop()?.text || ''
+        const last2 = initialMessages.filter((m) => m.side === 2).pop()?.text || ''
+        setLastStatement1(last1)
+        setLastStatement2(last2)
+      }
+      const turnsAfterFirst = rounds.filter((r) => r.counter_statement).length
+      setCurrentTurn(2 + turnsAfterFirst)
+
+      if (battle.status === 'completed') {
+        setWinnerSide(latestHp1 > 0 ? 1 : 2)
+        setMvpStatement(battle.mvp_statement || '')
+        setMvpDamage(battle.mvp_damage || 0)
+        setPhase('ended')
+        setReplayStep(Math.min(2, initialMessages.length))
+      } else {
+        setPhase('waiting')
+      }
+    } else {
+      await startBattle(f1, f2, battle.topic_text)
+    }
+  }
+
+  async function startBattle(f1: FighterInfo, f2: FighterInfo, topicText: string) {
+    const res = await fetch('/api/generate-first-statements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic: topicText,
+        fighter1Id: f1.agent_id,
+        fighter2Id: f2.agent_id,
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setPhase('ended')
+      return
+    }
+    addMessage({
+      side: 1,
+      agentName: f1.persona_name,
+      agentEmoji: f1.avatar_emoji,
+      text: data.statement1 || '덤벼봐.',
+    })
+    await sleep(700)
+    addMessage({
+      side: 2,
+      agentName: f2.persona_name,
+      agentEmoji: f2.avatar_emoji,
+      text: data.statement2 || '해보자고.',
+    })
+    setLastStatement1(data.statement1 || '덤벼봐.')
+    setLastStatement2(data.statement2 || '해보자고.')
+    setPhase('waiting')
+  }
+
+  async function handleReaction(selectedSide: 1 | 2, reaction: ReactionType) {
+    if (phase !== 'waiting' || !fighter1 || !fighter2) return
+    setPhase('generating')
+
+    const attacker = selectedSide === 1 ? fighter1 : fighter2
+    const defender = selectedSide === 1 ? fighter2 : fighter1
+    const lastDefenderStatement = selectedSide === 1 ? lastStatement2 : lastStatement1
+
+    const res = await fetch('/api/generate-battle-turn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic,
+        attackerId: attacker.agent_id,
+        defenderId: defender.agent_id,
+        reaction,
+        lastDefenderStatement,
+        turnNumber: currentTurn,
+        isFirstTurn: false,
+      }),
+    })
+    const turnData = await res.json().catch(() => ({}))
+    const attackStatement = turnData.attackStatement || '...'
+    const counterStatement = turnData.counterStatement || '...'
+
+    const dmg = calculateDamage(selectedSide, reaction, hp1, hp2, isDefending1, isDefending2)
+    addMessage({
+      side: selectedSide,
+      agentName: attacker.persona_name,
+      agentEmoji: attacker.avatar_emoji,
+      text: attackStatement,
+      reaction,
+      damage: dmg.damage,
+      isCritical: dmg.isCritical,
+    })
+
+    if (dmg.isCritical) {
+      setCriticalVisible(true)
+      setTimeout(() => setCriticalVisible(false), 1200)
+    }
+
+    setHp1(dmg.newHp1)
+    setHp2(dmg.newHp2)
+    setIsDefending1(dmg.newIsDefending1)
+    setIsDefending2(dmg.newIsDefending2)
+    if (dmg.damage > mvpDamage) {
+      setMvpDamage(dmg.damage)
+      setMvpStatement(attackStatement)
+    }
+
+    await supabase.from('rounds').insert({
+      battle_id: battleId,
+      round_number: currentTurn,
+      agent_id: attacker.agent_id,
+      statement_text: attackStatement,
+      response_to_agent_id: defender.agent_id,
+      user_reaction: reaction,
+      damage: dmg.damage,
+      is_critical: dmg.isCritical,
+      counter_statement: counterStatement,
+      counter_damage: 0,
+      hp1_after: dmg.newHp1,
+      hp2_after: dmg.newHp2,
+    })
+
+    if (dmg.newHp1 <= 0 || dmg.newHp2 <= 0) {
+      await sleep(500)
+      addMessage({
+        side: selectedSide === 1 ? 2 : 1,
+        agentName: defender.persona_name,
+        agentEmoji: defender.avatar_emoji,
+        text: counterStatement,
+      })
+      endBattle(dmg.newHp1 <= 0 ? 2 : 1, dmg.newHp1, dmg.newHp2)
+      return
+    }
+
+    await sleep(700)
+    addMessage({
+      side: selectedSide === 1 ? 2 : 1,
+      agentName: defender.persona_name,
+      agentEmoji: defender.avatar_emoji,
+      text: counterStatement,
+    })
+
+    if (selectedSide === 1) {
+      setLastStatement1(attackStatement)
+      setLastStatement2(counterStatement)
+    } else {
+      setLastStatement2(attackStatement)
+      setLastStatement1(counterStatement)
+    }
+
+    setCurrentTurn((prev) => prev + 1)
+    setPhase('waiting')
+  }
+
+  async function endBattle(winner: 1 | 2, finalHp1: number, finalHp2: number) {
+    setWinnerSide(winner)
+    setPhase('ended')
+    await supabase
+      .from('battles')
+      .update({
+        status: 'completed',
+        hp1: finalHp1,
+        hp2: finalHp2,
+        end_time: new Date().toISOString(),
+        mvp_statement: mvpStatement,
+        mvp_damage: mvpDamage,
+      })
+      .eq('battle_id', battleId)
+  }
+
+  const isLowHp1 = hp1 <= 30
+  const isLowHp2 = hp2 <= 30
+
+  if (!battleId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <p className="text-white">배틀 정보를 불러오는 중...</p>
+      </div>
+    )
+  }
+
+  if (!fighter1 || !fighter2 || phase === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <p className="text-white text-xl animate-pulse">⚔️ 배틀 준비 중...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={`min-h-screen flex flex-col transition-colors duration-1000
+      ${isLowHp1 && isLowHp2 ? 'bg-red-950' : isLowHp1 ? 'bg-gradient-to-r from-red-950 to-gray-900' : isLowHp2 ? 'bg-gradient-to-r from-gray-900 to-red-950' : 'bg-gray-900'}`}
+    >
+      <AnimatePresence>
+        {criticalVisible && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.5, 1], opacity: [0, 1, 1] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+          >
+            <div className="text-6xl md:text-7xl font-black text-yellow-400 drop-shadow-2xl">
+              🔥 CRITICAL!
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="p-4 bg-black/30 backdrop-blur sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto flex justify-between items-center">
+          <button
+            onClick={() => router.push(phase === 'ended' ? '/board' : '/')}
+            className="text-white/60 hover:text-white text-sm"
+          >
+            ← {phase === 'ended' ? '목록' : '나가기'}
+          </button>
+          <p className="text-white font-bold text-center flex-1 mx-4 truncate text-sm md:text-base">
+            ⚔️ {topic}
+          </p>
+          {phase !== 'ended' && (
+            <span className="text-white/60 text-xs">턴 {currentTurn}</span>
+          )}
+        </div>
+      </div>
+
+      {/* 종료 시: 게시판에서 들어온 재생 → 다음 대사 + 접힌 결과보기 / 라이브로 방금 끝남 → 전체 대화 + 결과 바로 표시 */}
+      {phase === 'ended' && isFromBoard ? (
+        /* 게시판 재생 화면: 채팅이 화면 대부분 차지, 결과보기는 항상 맨 아래 고정 */
+        <>
+          <div className="flex-1 flex flex-col min-h-0 w-full max-w-2xl mx-auto">
+            {/* 채팅 영역: 남는 공간 전부 사용, 스크롤만 여기서 발생 */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+              <div className="space-y-0">
+                <AnimatePresence>
+                  {messages.slice(0, replayStep).map((msg) => (
+                    <div key={msg.id}>
+                      {msg.reaction != null && (
+                        <div className="text-center py-2">
+                          <span className="inline-block px-3 py-1.5 rounded-lg bg-white/10 text-gray-200 text-xs md:text-sm">
+                            👤 관객이 <strong className="text-white">{msg.agentName}</strong>의{' '}
+                            <span className="text-yellow-300">
+                              {msg.reaction === '공격' && '⚔️ 공격'}
+                              {msg.reaction === '방어' && '🛡️ 방어'}
+                              {msg.reaction === '병맛' && '🤪 병맛'}
+                              {msg.reaction === '감정' && '😡 감정'}
+                            </span>{' '}
+                            선택
+                            {msg.reaction === '방어' ? (
+                              <span className="text-blue-300"> → 다음 턴 데미지 50% 감소</span>
+                            ) : (msg.damage === 0 && msg.reaction === '병맛') ? (
+                              <span className="text-gray-400"> → 🤪 완전 빗나감! (0 데미지)</span>
+                            ) : (
+                              <>
+                                {' '}
+                                →{' '}
+                                {msg.isCritical ? (
+                                  <span className="text-yellow-400">🔥 CRITICAL! -{msg.damage ?? 0} 데미지</span>
+                                ) : (
+                                  <span className="text-red-300">💥 -{msg.damage ?? 0} 데미지</span>
+                                )}
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                      <ChatBubble
+                        side={msg.side}
+                        agentName={msg.agentName}
+                        agentEmoji={msg.agentEmoji}
+                        text={msg.text}
+                        reaction={msg.reaction}
+                        damage={msg.damage}
+                        isCritical={msg.isCritical}
+                      />
+                    </div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {replayStep < messages.length ? (
+                <button
+                  onClick={() => setReplayStep((s) => s + 1)}
+                  className="w-full mt-2 py-3 bg-blue-600/90 hover:bg-blue-500 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm"
+                >
+                  다음 대사
+                  <span className="text-lg">▶</span>
+                </button>
+              ) : null}
+              <div ref={chatEndRef} />
+            </div>
+          </div>
+
+          {/* 결과보기: 화면 맨 아래 고정(채팅과 겹치지 않음) */}
+          <div className="shrink-0 w-full max-w-2xl mx-auto px-4 pb-4 pt-2">
+            <motion.button
+              initial={false}
+              animate={{ opacity: 1 }}
+              onClick={() => setResultExpanded((e) => !e)}
+              className="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-t-2xl font-bold transition-all flex items-center justify-center gap-2 border border-gray-600 border-b-0"
+            >
+              결과보기
+              <motion.span
+                animate={{ rotate: resultExpanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                className="text-lg"
+              >
+                ▼
+              </motion.span>
+            </motion.button>
+
+            <AnimatePresence>
+              {resultExpanded && winnerSide && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="bg-gray-800 border border-gray-600 border-t-0 rounded-b-2xl p-4 pb-6">
+                    <BattleResult
+                      winnerName={winnerSide === 1 ? fighter1.persona_name : fighter2.persona_name}
+                      winnerEmoji={winnerSide === 1 ? fighter1.avatar_emoji : fighter2.avatar_emoji}
+                      loserName={winnerSide === 1 ? fighter2.persona_name : fighter1.persona_name}
+                      loserEmoji={winnerSide === 1 ? fighter2.avatar_emoji : fighter1.avatar_emoji}
+                      winnerHp={winnerSide === 1 ? hp1 : hp2}
+                      mvpStatement={mvpStatement}
+                      mvpDamage={mvpDamage}
+                      battleId={battleId}
+                      onReplay={() => router.refresh()}
+                      onRevenge={() => router.push('/')}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </>
+      ) : phase === 'ended' && !isFromBoard ? (
+        /* 라이브로 방금 끝난 배틀: 전체 대화 + 결과 바로 크게 표시 */
+        <>
+          <div
+            className="max-w-2xl mx-auto w-full flex-1 px-4 py-4 overflow-y-auto"
+            style={{ minHeight: '180px', maxHeight: '38vh' }}
+          >
+            <div className="space-y-0">
+              <AnimatePresence>
+                {messages.map((msg) => (
+                  <ChatBubble
+                    key={msg.id}
+                    side={msg.side}
+                    agentName={msg.agentName}
+                    agentEmoji={msg.agentEmoji}
+                    text={msg.text}
+                    reaction={msg.reaction}
+                    damage={msg.damage}
+                    isCritical={msg.isCritical}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+            <div ref={chatEndRef} />
+          </div>
+          {winnerSide && (
+            <div className="max-w-2xl mx-auto w-full px-4 pb-6">
+              <BattleResult
+                winnerName={winnerSide === 1 ? fighter1.persona_name : fighter2.persona_name}
+                winnerEmoji={winnerSide === 1 ? fighter1.avatar_emoji : fighter2.avatar_emoji}
+                loserName={winnerSide === 1 ? fighter2.persona_name : fighter1.persona_name}
+                loserEmoji={winnerSide === 1 ? fighter2.avatar_emoji : fighter1.avatar_emoji}
+                winnerHp={winnerSide === 1 ? hp1 : hp2}
+                mvpStatement={mvpStatement}
+                mvpDamage={mvpDamage}
+                battleId={battleId}
+                onReplay={() => router.refresh()}
+                onRevenge={() => router.push('/')}
+              />
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {/* 라이브 배틀: 채팅창 */}
+          <div
+            className="max-w-2xl mx-auto w-full flex-1 px-4 py-4 overflow-y-auto"
+            style={{ minHeight: '180px', maxHeight: '38vh' }}
+          >
+            <div className="space-y-0">
+              <AnimatePresence>
+                {messages.map((msg) => (
+                  <ChatBubble
+                    key={msg.id}
+                    side={msg.side}
+                    agentName={msg.agentName}
+                    agentEmoji={msg.agentEmoji}
+                    text={msg.text}
+                    reaction={msg.reaction}
+                    damage={msg.damage}
+                    isCritical={msg.isCritical}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+            {phase === 'generating' && (
+              <div className="flex items-center gap-2 text-gray-400 text-sm p-2 mb-2">
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }}
+                      className="w-2 h-2 bg-gray-400 rounded-full"
+                    />
+                  ))}
+                </div>
+                <span>대사 생성 중...</span>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* 두 AI 하단에 각각 "관객 반응을 선택하세요!" 깜빡임 */}
+          <div className="max-w-2xl mx-auto w-full px-4 pb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <MentalBar
+                  name={fighter1.persona_name}
+                  emoji={fighter1.avatar_emoji}
+                  currentHp={hp1}
+                  isDefending={isDefending1}
+                  side="left"
+                />
+                <ReactionButtons
+                  fighterSide={1}
+                  fighterName={fighter1.persona_name}
+                  fighterEmoji={fighter1.avatar_emoji}
+                  onReaction={handleReaction}
+                  disabled={phase !== 'waiting'}
+                />
+              </div>
+              <div>
+                <MentalBar
+                  name={fighter2.persona_name}
+                  emoji={fighter2.avatar_emoji}
+                  currentHp={hp2}
+                  isDefending={isDefending2}
+                  side="right"
+                />
+                <ReactionButtons
+                  fighterSide={2}
+                  fighterName={fighter2.persona_name}
+                  fighterEmoji={fighter2.avatar_emoji}
+                  onReaction={handleReaction}
+                  disabled={phase !== 'waiting'}
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
