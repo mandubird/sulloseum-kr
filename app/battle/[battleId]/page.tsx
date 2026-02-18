@@ -28,6 +28,29 @@ interface FighterInfo {
   description: string
 }
 
+const MOTIVATION_TEXT = [
+  '우리는 매일 수많은 논쟁을 마주합니다.',
+  '연애, 돈, 직장, 결혼, 세대 차이까지.',
+  '',
+  '하지만 대부분의 갈등은',
+  '감정만 남기고 끝나버립니다.',
+  '',
+  '썰로세움은',
+  '사람 대신 AI 페르소나가',
+  '극단적인 입장을 연기하며',
+  '다양한 가치관을 실험 관찰하는 공간입니다.',
+  '',
+  '이곳의 배틀은 누군가를 공격하기 위한 싸움이 아니라,',
+  '생각의 차이를 안전하게 관찰하기 위한 장치입니다.',
+  '',
+  '웃고 넘길 수도 있고,',
+  '고개를 끄덕일 수도 있고,',
+  '불편할 수도 있습니다.',
+  '',
+  '그 모든 반응이',
+  '우리가 서로를 이해하는 출발점이라고 믿습니다.',
+]
+
 export default function BattleArena() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -57,6 +80,7 @@ export default function BattleArena() {
   const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null)
   const [autoPlaying, setAutoPlaying] = useState(false)
   const [showReturnReminder, setShowReturnReminder] = useState(false)
+  const [isMotivationOpen, setIsMotivationOpen] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const battleTopRef = useRef<HTMLDivElement>(null)
   const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -88,8 +112,8 @@ export default function BattleArena() {
     handleReactionRef.current = handleReaction
   })
 
-  // 무반응 30초 → "3초 후 자동 진행" → 자동으로 끝날 때까지 진행 (API 효율: 빠르게 결과·게시판화)
-  const INACTIVITY_MS = 30 * 1000
+  // 무반응 1분 → "3초 후 자동 진행" → 자동으로 끝날 때까지 진행 (API 효율: 빠르게 결과·게시판화)
+  const INACTIVITY_MS = 60 * 1000
   const COUNTDOWN_SEC = 3
   useEffect(() => {
     if (phase !== 'waiting' || !fighter1 || !fighter2 || autoPlaying) {
@@ -135,7 +159,8 @@ export default function BattleArena() {
     }
   }, [autoAdvanceCountdown])
 
-  // 자동 진행: waiting일 때마다 한 턴씩 랜덤 반응 → 끝나면(ended) 중단
+  // 자동 진행: waiting일 때마다 한 턴씩 랜덤 반응 → 끝나면(ended) 중단 (턴 간격으로 대사가 읽기 좋게)
+  const AUTO_TURN_DELAY_MS = 2500
   useEffect(() => {
     if (!autoPlaying || !fighter1 || !fighter2) {
       if (phase === 'ended') setAutoPlaying(false)
@@ -145,7 +170,7 @@ export default function BattleArena() {
     const t = setTimeout(() => {
       const side = Math.random() < 0.5 ? 1 : 2
       handleReactionRef.current(side, getRandomReaction())
-    }, 500)
+    }, AUTO_TURN_DELAY_MS)
     return () => clearTimeout(t)
   }, [autoPlaying, phase, fighter1, fighter2])
 
@@ -483,7 +508,7 @@ export default function BattleArena() {
         )}
       </AnimatePresence>
 
-      {/* 무반응 30초 후: 3초 카운트다운 후 자동 진행 */}
+      {/* 무반응 1분 후: 3초 카운트다운 후 자동 진행 */}
       <AnimatePresence>
         {autoAdvanceCountdown !== null && phase === 'waiting' && (
           <motion.div
@@ -650,6 +675,18 @@ export default function BattleArena() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* 하단: 제작동기 버튼 + 저작권 (배틀게시판과 동일) */}
+            <footer className="mt-10 pt-6 pb-8 text-center">
+              <button
+                type="button"
+                onClick={() => setIsMotivationOpen(true)}
+                className="mb-4 px-5 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 text-sm font-medium transition-all border border-white/20"
+              >
+                왜 썰로세움을 만들었나요?
+              </button>
+              <p className="text-white/60 text-sm">© 2026 썰로세움 | 한국 인터넷 문화 AI 실험 프로젝트</p>
+            </footer>
           </div>
         </>
       ) : phase === 'ended' && !isFromBoard ? (
@@ -789,6 +826,59 @@ export default function BattleArena() {
           </div>
         </>
       )}
+
+      {/* 제작동기 모달 (배틀게시판에서 들어온 상세에서 사용) */}
+      <AnimatePresence>
+        {isMotivationOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsMotivationOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto border border-gray-700 relative"
+            >
+              <button
+                type="button"
+                onClick={() => setIsMotivationOpen(false)}
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors z-10"
+                aria-label="닫기"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="p-6 md:p-8">
+                <h2 className="text-xl font-bold text-white mb-6 text-center pr-8">
+                  왜 썰로세움을 만들었나요?
+                </h2>
+                <div className="space-y-3 text-white/90 text-sm md:text-base leading-relaxed">
+                  {MOTIVATION_TEXT.map((line, i) => (
+                    <p key={i} className={line === '' ? 'h-3' : ''}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+                <div className="mt-8 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsMotivationOpen(false)}
+                    className="px-6 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-medium"
+                  >
+                    닫기
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

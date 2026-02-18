@@ -57,7 +57,7 @@ export default function Home() {
           <br />
           🎭 과장된 AI 페르소나가 극단적으로 몰입 연기
         </p>
-        <p className="text-white/60 text-xs text-center mt-3 px-1">※ 본 배틀은 특정 세대나 실제 인물과 무관하며, 재미용 실험임을 밝힙니다. ※</p>
+        <p className="text-white/60 text-xs text-center mt-3 px-1">※ 본 배틀은 특정 세대나 실제 인물과 무관한 재미용 실험입니다. ※</p>
       </div>
 
       {/* 본문: 전장 카드 5개 + 배틀 게시판(PC에서 돈 옆 6번째) */}
