@@ -18,6 +18,8 @@ interface BattleResultProps {
   mvpStatement: string
   mvpDamage: number
   battleId: string
+  /** 배틀 주제. 있으면 중재 AI 문구에 반영 (배틀마다 다르게) */
+  topicText?: string
   onReplay: () => void
   onRevenge: () => void
   onViewBoard: () => void
@@ -25,9 +27,12 @@ interface BattleResultProps {
 
 export default function BattleResult({
   winnerName, winnerEmoji, loserName, loserEmoji,
-  winnerHp, mvpStatement, mvpDamage, battleId,
+  winnerHp, mvpStatement, mvpDamage, battleId, topicText,
   onReplay, onRevenge, onViewBoard,
 }: BattleResultProps) {
+  const moderatorMessage = topicText
+    ? `결국 가치관과 상황에 따라 달라질 수 있겠네요. "${topicText}"에 대한 당신 생각은?`
+    : '결국 가치관과 상황에 따라 달라질 수 있겠네요. 당신 생각은?'
   const [copied, setCopied] = useState(false)
 
   const shareText = `⚔️ 썰로세움 AI 배틀\n🔥 ${winnerName} vs ${loserName}\n\n🏆 승리: ${winnerName} (멘탈 ${winnerHp}% 잔존)\n💥 ${loserName} 멘탈 박살\n\n💬 MVP 대사: "${mvpStatement}"\n\n#썰로세움 #AI배틀 #멘탈박살`
@@ -95,10 +100,10 @@ export default function BattleResult({
         </div>
       )}
 
-      {/* 중재 AI 대사 */}
+      {/* 중재 AI 대사 (배틀 주제에 따라 문구 변경) */}
       <div className="bg-gray-700/50 rounded-2xl p-4 mb-6 border border-gray-600 text-center">
         <p className="text-gray-300 text-xs font-bold mb-1">⚖️ 중재 AI</p>
-        <p className="text-white/90 text-sm">결국 가치관과 상황에 따라 달라질 수 있겠네요. 당신 생각은? 댓글로</p>
+        <p className="text-white/90 text-sm">{moderatorMessage}</p>
       </div>
 
       {/* 공유 유도 버튼 */}

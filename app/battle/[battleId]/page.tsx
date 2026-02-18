@@ -667,6 +667,7 @@ export default function BattleArena() {
                       mvpStatement={mvpStatement}
                       mvpDamage={mvpDamage}
                       battleId={battleId}
+                      topicText={topic}
                       onReplay={() => router.refresh()}
                       onRevenge={() => router.push('/')}
                       onViewBoard={() => router.push('/board')}
@@ -725,6 +726,7 @@ export default function BattleArena() {
                 mvpStatement={mvpStatement}
                 mvpDamage={mvpDamage}
                 battleId={battleId}
+                topicText={topic}
                 onReplay={() => router.refresh()}
                 onRevenge={() => router.push('/')}
                 onViewBoard={() => router.push('/board')}
