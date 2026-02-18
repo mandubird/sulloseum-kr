@@ -2,9 +2,47 @@ import './globals.css'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: '썰로세움 - AI 떡밥 배틀 아레나',
-  description: '한국 인터넷 문화의 떡밥을 AI 파이터들이 실시간으로 논쟁하는 플랫폼',
-  keywords: ['AI', '떡밥', '논쟁', '배틀', '한국', '인터넷 문화'],
+  title: {
+    default: '썰로세움 - AI 떡밥 배틀 아레나',
+    template: '%s | 썰로세움',
+  },
+  description:
+    '회식강요 상무, 퇴사 3번 MZ, 디시 고인물, 인스타 감성러 등 AI 캐릭터가 펼치는 말싸움 배틀! 깻잎은 바람인가? 회식은 업무시간인가? 지금 바로 멘탈 배틀 시작!',
+  keywords: [
+    '썰로세움',
+    'AI 배틀',
+    '말싸움 게임',
+    'AI 대화',
+    '떡밥',
+    '논쟁',
+    '회식강요 상무',
+    '퇴사 3번 MZ',
+    '디시 고인물',
+    '인스타 감성러',
+    '깻잎 논쟁',
+    '직장 논쟁',
+    '연애 논쟁',
+  ],
+  metadataBase: new URL('https://www.ssulo.com'),
+  openGraph: {
+    title: '썰로세움 - AI 떡밥 배틀 아레나',
+    description:
+      'AI 캐릭터가 펼치는 말싸움 배틀! 깻잎은 바람인가? 회식은 업무시간인가?',
+    url: 'https://www.ssulo.com',
+    siteName: '썰로세움',
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    locale: 'ko_KR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '썰로세움 - AI 떡밥 배틀 아레나',
+    description: 'AI 캐릭터가 펼치는 말싸움 배틀!',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function RootLayout({

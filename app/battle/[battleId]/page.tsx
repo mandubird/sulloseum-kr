@@ -584,13 +584,22 @@ export default function BattleArena() {
               </div>
 
               {replayStep < messages.length ? (
-                <button
-                  onClick={() => setReplayStep((s) => s + 1)}
-                  className="w-full mt-2 py-3 bg-blue-600/90 hover:bg-blue-500 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm"
-                >
-                  다음 대사
-                  <span className="text-lg">▶</span>
-                </button>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => setReplayStep((s) => s + 1)}
+                    className="flex-1 py-3 bg-blue-600/90 hover:bg-blue-500 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm"
+                  >
+                    다음 대사
+                    <span className="text-lg">▶</span>
+                  </button>
+                  <button
+                    onClick={() => setReplayStep(messages.length)}
+                    className="flex-1 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm"
+                  >
+                    전체보기
+                    <span className="text-lg">⏭</span>
+                  </button>
+                </div>
               ) : null}
               <div ref={chatEndRef} />
             </div>
