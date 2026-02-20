@@ -24,7 +24,12 @@ export const metadata: Metadata = {
     '직장 논쟁',
     '연애 논쟁',
   ],
+  authors: [{ name: '썰로세움' }],
+  creator: '썰로세움',
+  publisher: '썰로세움',
+  formatDetection: { email: false, address: false, telephone: false },
   metadataBase: new URL('https://www.ssulo.com'),
+  alternates: { canonical: '/' },
   openGraph: {
     title: '썰로세움 - AI 떡밥 배틀 아레나',
     description:
@@ -43,6 +48,16 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large' as const,
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    // Google Search Console 발급 후 추가: google: 'your-code',
   },
 }
 
@@ -53,7 +68,27 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        <link rel="sitemap" type="application/xml" title="Sitemap" href="https://www.ssulo.com/sitemap.xml" />
+      </head>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: '썰로세움',
+              url: 'https://www.ssulo.com',
+              description: 'AI 캐릭터 간 말싸움 배틀 게임',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: 'https://www.ssulo.com/board?q={search_term_string}',
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
         <Script
           id="adsense"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4031872323439673"

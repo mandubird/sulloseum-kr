@@ -9,6 +9,7 @@ import MentalBar from '@/components/MentalBar'
 import ChatBubble from '@/components/ChatBubble'
 import ReactionButtons from '@/components/ReactionButtons'
 import BattleResult from '@/components/BattleResult'
+import BattleStructuredData from '@/components/BattleStructuredData'
 
 interface ChatMessage {
   id: string
@@ -75,6 +76,7 @@ export default function BattleArena() {
   const [winnerSide, setWinnerSide] = useState<1 | 2 | null>(null)
   const [mvpStatement, setMvpStatement] = useState('')
   const [mvpDamage, setMvpDamage] = useState(0)
+  const [battleCreatedAt, setBattleCreatedAt] = useState('')
   const [replayStep, setReplayStep] = useState(0)
   const [resultExpanded, setResultExpanded] = useState(false)
   const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null)
@@ -298,6 +300,7 @@ export default function BattleArena() {
         setWinnerSide(latestHp1 > 0 ? 1 : 2)
         setMvpStatement(battle.mvp_statement || '')
         setMvpDamage(battle.mvp_damage || 0)
+        setBattleCreatedAt(battle.created_at ? new Date(battle.created_at).toISOString() : new Date().toISOString())
         setPhase('ended')
         setReplayStep(Math.min(2, initialMessages.length))
         if (viewCountRecordedRef.current !== battleId) {
@@ -658,6 +661,17 @@ export default function BattleArena() {
                   className="overflow-hidden"
                 >
                   <div className="bg-gray-800 border border-gray-600 border-t-0 rounded-b-2xl p-4 pb-6">
+                    {fighter1 && fighter2 && (
+                      <BattleStructuredData
+                        battleId={battleId}
+                        topic={topic}
+                        fighter1Name={fighter1.persona_name}
+                        fighter2Name={fighter2.persona_name}
+                        winnerName={winnerSide === 1 ? fighter1.persona_name : fighter2.persona_name}
+                        mvpStatement={mvpStatement}
+                        createdAt={battleCreatedAt || undefined}
+                      />
+                    )}
                     <BattleResult
                       winnerName={winnerSide === 1 ? fighter1.persona_name : fighter2.persona_name}
                       winnerEmoji={winnerSide === 1 ? fighter1.avatar_emoji : fighter2.avatar_emoji}
@@ -717,6 +731,17 @@ export default function BattleArena() {
           </div>
           {winnerSide && (
             <div className="max-w-2xl mx-auto w-full px-4 pb-6">
+              {fighter1 && fighter2 && (
+                <BattleStructuredData
+                  battleId={battleId}
+                  topic={topic}
+                  fighter1Name={fighter1.persona_name}
+                  fighter2Name={fighter2.persona_name}
+                  winnerName={winnerSide === 1 ? fighter1.persona_name : fighter2.persona_name}
+                  mvpStatement={mvpStatement}
+                  createdAt={battleCreatedAt || undefined}
+                />
+              )}
               <BattleResult
                 winnerName={winnerSide === 1 ? fighter1.persona_name : fighter2.persona_name}
                 winnerEmoji={winnerSide === 1 ? fighter1.avatar_emoji : fighter2.avatar_emoji}

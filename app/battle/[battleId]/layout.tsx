@@ -46,13 +46,27 @@ export async function generateMetadata({
     const f1Name = f1?.persona_name ?? ''
     const f2Name = f2?.persona_name ?? ''
 
+    const battleUrl = `https://www.ssulo.com/battle/${params.battleId}`
     return {
       title,
       description,
+      alternates: { canonical: battleUrl },
+      keywords: [
+        '썰로세움',
+        'AI 배틀',
+        '말싸움 게임',
+        f1Name,
+        f2Name,
+        battle.topic_text,
+        '멘탈 박살',
+        'AI 대화',
+        '캐릭터 대결',
+      ].filter(Boolean),
       openGraph: {
         title,
         description,
-        url: `https://www.ssulo.com/battle/${params.battleId}`,
+        url: battleUrl,
+        siteName: '썰로세움',
         images: [
           {
             url: `https://www.ssulo.com/api/og?f1=${encodeURIComponent(f1Name)}&f2=${encodeURIComponent(f2Name)}&topic=${encodeURIComponent(battle.topic_text)}&winner=${encodeURIComponent(winner ?? '')}`,
@@ -60,6 +74,8 @@ export async function generateMetadata({
             height: 630,
           },
         ],
+        locale: 'ko_KR',
+        type: 'website',
       },
     }
   } catch {
