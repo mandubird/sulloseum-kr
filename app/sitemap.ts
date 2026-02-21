@@ -42,12 +42,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ]
   } catch (err) {
     console.error('Sitemap error:', err)
+    // DB 오류 시에도 홈·게시판은 유지해 크롤러가 상세 페이지 발견 경로를 잃지 않도록 함
     return [
       {
         url: baseUrl,
         lastModified: new Date(),
         changeFrequency: 'daily',
         priority: 1,
+      },
+      {
+        url: `${baseUrl}/board`,
+        lastModified: new Date(),
+        changeFrequency: 'hourly',
+        priority: 0.9,
       },
     ]
   }

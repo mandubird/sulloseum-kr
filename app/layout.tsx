@@ -57,7 +57,10 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    // Google Search Console 발급 후 추가: google: 'your-code',
+    // Search Console/서치어드바이저 발급 후 meta 태그 코드를 여기 추가하세요.
+    // google: '검색콘솔에서 받은 content 값',
+    // yandex: 'Yandex에서 받은 값',
+    // other: { 'naver-site-verification': '이미 public/naver*.html 사용 중' },
   },
 }
 
@@ -92,10 +95,10 @@ export default function RootLayout({
         <Script
           id="adsense"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4031872323439673"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           crossOrigin="anonymous"
         />
-        <Script id="clarity" strategy="beforeInteractive">
+        <Script id="clarity" strategy="afterInteractive">
           {`(function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
         t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;

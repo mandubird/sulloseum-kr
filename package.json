@@ -6,27 +6,31 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "render-video": "tsx scripts/render-battle-video.ts",
+    "prepare-publish": "tsx scripts/prepare-publish.ts",
+    "open-publish": "tsx scripts/open-publish-session.ts"
   },
   "dependencies": {
-    "next": "^14.2.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
     "@supabase/supabase-js": "^2.39.0",
-    "openai": "^4.28.0",
     "framer-motion": "^11.0.0",
     "html2canvas": "^1.4.1",
-    "lucide-react": "^0.344.0"
+    "lucide-react": "^0.344.0",
+    "next": "^14.2.0",
+    "openai": "^4.28.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
   },
   "devDependencies": {
-    "dotenv": "^16.3.1",
-    "tsx": "^4.7.0",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.17",
+    "dotenv": "^16.3.1",
+    "playwright": "^1.58.2",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
 }

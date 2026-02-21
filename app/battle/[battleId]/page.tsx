@@ -9,7 +9,6 @@ import MentalBar from '@/components/MentalBar'
 import ChatBubble from '@/components/ChatBubble'
 import ReactionButtons from '@/components/ReactionButtons'
 import BattleResult from '@/components/BattleResult'
-import BattleStructuredData from '@/components/BattleStructuredData'
 
 interface ChatMessage {
   id: string
@@ -58,6 +57,7 @@ export default function BattleArena() {
   const battleId = (params?.battleId as string) ?? ''
   const router = useRouter()
   const isFromBoard = searchParams.get('from') === 'board'
+  const isRecordMode = searchParams.get('record') === '1'
 
   const [fighter1, setFighter1] = useState<FighterInfo | null>(null)
   const [fighter2, setFighter2] = useState<FighterInfo | null>(null)
@@ -199,6 +199,22 @@ export default function BattleArena() {
     }
   }, [phase])
 
+  // 녹화 모드(record=1): 재생을 처음부터 자동 진행 → 전체보기 → 결과 펼침 → 녹화 준비 이벤트
+  const RECORD_STEP_MS = 2800
+  const RECORD_RESULT_HOLD_MS = 2500
+  useEffect(() => {
+    if (!isRecordMode || phase !== 'ended' || messages.length === 0) return
+    if (replayStep < messages.length) {
+      const t = setTimeout(() => setReplayStep((s) => s + 1), RECORD_STEP_MS)
+      return () => clearTimeout(t)
+    }
+    setResultExpanded(true)
+    const t = setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('ssulo:record-ready'))
+    }, RECORD_RESULT_HOLD_MS)
+    return () => clearTimeout(t)
+  }, [isRecordMode, phase, messages.length, replayStep])
+
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
   const addMessage = (msg: Omit<ChatMessage, 'id'>) => {
@@ -302,7 +318,7 @@ export default function BattleArena() {
         setMvpDamage(battle.mvp_damage || 0)
         setBattleCreatedAt(battle.created_at ? new Date(battle.created_at).toISOString() : new Date().toISOString())
         setPhase('ended')
-        setReplayStep(Math.min(2, initialMessages.length))
+        setReplayStep(isRecordMode ? 0 : Math.min(2, initialMessages.length))
         if (viewCountRecordedRef.current !== battleId) {
           viewCountRecordedRef.current = battleId
           fetch('/api/battle-view', {
@@ -557,8 +573,8 @@ export default function BattleArena() {
         </div>
       </div>
 
-      {/* 종료 시: 게시판에서 들어온 재생 → 다음 대사 + 접힌 결과보기 / 라이브로 방금 끝남 → 전체 대화 + 결과 바로 표시 */}
-      {phase === 'ended' && isFromBoard ? (
+      {/* 종료 시: 게시판에서 들어온 재생(또는 녹화 모드) → 다음 대사 + 접힌 결과보기 / 라이브로 방금 끝남 → 전체 대화 + 결과 바로 표시 */}
+      {phase === 'ended' && (isFromBoard || isRecordMode) ? (
         /* 게시판 재생 화면: 채팅이 화면 대부분 차지, 결과보기는 항상 맨 아래 고정 */
         <>
           <div className="flex-1 flex flex-col min-h-0 w-full max-w-2xl mx-auto">
@@ -611,7 +627,7 @@ export default function BattleArena() {
                 </AnimatePresence>
               </div>
 
-              {replayStep < messages.length ? (
+              {replayStep < messages.length && !isRecordMode ? (
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={() => setReplayStep((s) => s + 1)}
@@ -633,23 +649,25 @@ export default function BattleArena() {
             </div>
           </div>
 
-          {/* 결과보기: 화면 맨 아래 고정(채팅과 겹치지 않음) */}
+          {/* 결과보기: 화면 맨 아래 고정(채팅과 겹치지 않음). 녹화 모드에서는 버튼 숨김 */}
           <div className="shrink-0 w-full max-w-2xl mx-auto px-4 pb-4 pt-2">
-            <motion.button
-              initial={false}
-              animate={{ opacity: 1 }}
-              onClick={() => setResultExpanded((e) => !e)}
-              className="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-t-2xl font-bold transition-all flex items-center justify-center gap-2 border border-gray-600 border-b-0"
-            >
-              결과보기
-              <motion.span
-                animate={{ rotate: resultExpanded ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-                className="text-lg"
+            {!isRecordMode && (
+              <motion.button
+                initial={false}
+                animate={{ opacity: 1 }}
+                onClick={() => setResultExpanded((e) => !e)}
+                className="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-t-2xl font-bold transition-all flex items-center justify-center gap-2 border border-gray-600 border-b-0"
               >
-                ▼
-              </motion.span>
-            </motion.button>
+                결과보기
+                <motion.span
+                  animate={{ rotate: resultExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-lg"
+                >
+                  ▼
+                </motion.span>
+              </motion.button>
+            )}
 
             <AnimatePresence>
               {resultExpanded && winnerSide && (
@@ -661,17 +679,6 @@ export default function BattleArena() {
                   className="overflow-hidden"
                 >
                   <div className="bg-gray-800 border border-gray-600 border-t-0 rounded-b-2xl p-4 pb-6">
-                    {fighter1 && fighter2 && (
-                      <BattleStructuredData
-                        battleId={battleId}
-                        topic={topic}
-                        fighter1Name={fighter1.persona_name}
-                        fighter2Name={fighter2.persona_name}
-                        winnerName={winnerSide === 1 ? fighter1.persona_name : fighter2.persona_name}
-                        mvpStatement={mvpStatement}
-                        createdAt={battleCreatedAt || undefined}
-                      />
-                    )}
                     <BattleResult
                       winnerName={winnerSide === 1 ? fighter1.persona_name : fighter2.persona_name}
                       winnerEmoji={winnerSide === 1 ? fighter1.avatar_emoji : fighter2.avatar_emoji}
@@ -691,17 +698,19 @@ export default function BattleArena() {
               )}
             </AnimatePresence>
 
-            {/* 하단: 제작동기 버튼 + 저작권 (배틀게시판과 동일) */}
-            <footer className="mt-10 pt-6 pb-8 text-center">
-              <button
-                type="button"
-                onClick={() => setIsMotivationOpen(true)}
-                className="mb-4 px-5 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 text-sm font-medium transition-all border border-white/20"
-              >
-                왜 썰로세움을 만들었나요?
-              </button>
-              <p className="text-white/60 text-sm">© 2026 썰로세움 | 한국 인터넷 문화 AI 실험 프로젝트</p>
-            </footer>
+            {/* 하단: 제작동기 버튼 + 저작권 (배틀게시판과 동일). 녹화 모드에서는 숨김 */}
+            {!isRecordMode && (
+              <footer className="mt-10 pt-6 pb-8 text-center">
+                <button
+                  type="button"
+                  onClick={() => setIsMotivationOpen(true)}
+                  className="mb-4 px-5 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 text-sm font-medium transition-all border border-white/20"
+                >
+                  왜 썰로세움을 만들었나요?
+                </button>
+                <p className="text-white/60 text-sm">© 2026 썰로세움 | 한국 인터넷 문화 AI 실험 프로젝트</p>
+              </footer>
+            )}
           </div>
         </>
       ) : phase === 'ended' && !isFromBoard ? (
@@ -731,17 +740,6 @@ export default function BattleArena() {
           </div>
           {winnerSide && (
             <div className="max-w-2xl mx-auto w-full px-4 pb-6">
-              {fighter1 && fighter2 && (
-                <BattleStructuredData
-                  battleId={battleId}
-                  topic={topic}
-                  fighter1Name={fighter1.persona_name}
-                  fighter2Name={fighter2.persona_name}
-                  winnerName={winnerSide === 1 ? fighter1.persona_name : fighter2.persona_name}
-                  mvpStatement={mvpStatement}
-                  createdAt={battleCreatedAt || undefined}
-                />
-              )}
               <BattleResult
                 winnerName={winnerSide === 1 ? fighter1.persona_name : fighter2.persona_name}
                 winnerEmoji={winnerSide === 1 ? fighter1.avatar_emoji : fighter2.avatar_emoji}

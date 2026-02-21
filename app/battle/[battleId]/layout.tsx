@@ -86,10 +86,62 @@ export async function generateMetadata({
   }
 }
 
-export default function BattleIdLayout({
+/** 배틀 상세 페이지에서 SSR 시 크롤러가 읽을 수 있도록 JSON-LD를 서버에서 주입 */
+async function getBattleStructuredData(battleId: string) {
+  try {
+    const { data: battle } = await supabase
+      .from('battles')
+      .select('topic_text, mvp_statement, hp1, hp2, participants, created_at')
+      .eq('battle_id', battleId)
+      .single()
+    if (!battle) return null
+    const p = (battle.participants || {}) as { fighter1?: string; fighter2?: string }
+    const [{ data: f1 }, { data: f2 }] = await Promise.all([
+      p.fighter1 ? supabase.from('agents').select('persona_name').eq('agent_id', p.fighter1).single() : { data: null },
+      p.fighter2 ? supabase.from('agents').select('persona_name').eq('agent_id', p.fighter2).single() : { data: null },
+    ])
+    const winnerName = (battle.hp1 ?? 0) > 0 ? f1?.persona_name : f2?.persona_name
+    const f1Name = f1?.persona_name ?? ''
+    const f2Name = f2?.persona_name ?? ''
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Event',
+      name: `${f1Name} vs ${f2Name} - ${battle.topic_text}`,
+      description: battle.mvp_statement || battle.topic_text,
+      startDate: battle.created_at || new Date().toISOString(),
+      endDate: battle.created_at || new Date().toISOString(),
+      eventStatus: 'https://schema.org/EventScheduled',
+      eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
+      location: { '@type': 'VirtualLocation', url: `https://www.ssulo.com/battle/${battleId}` },
+      performer: [
+        { '@type': 'Person', name: f1Name },
+        { '@type': 'Person', name: f2Name },
+      ],
+      ...(winnerName && { winner: { '@type': 'Person', name: winnerName } }),
+    }
+  } catch {
+    return null
+  }
+}
+
+export default async function BattleIdLayout({
   children,
+  params,
 }: {
   children: React.ReactNode
+  params: { battleId: string }
 }) {
-  return <>{children}</>
+  const battleId = params.battleId
+  const jsonLd = battleId ? await getBattleStructuredData(battleId) : null
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      {children}
+    </>
+  )
 }
