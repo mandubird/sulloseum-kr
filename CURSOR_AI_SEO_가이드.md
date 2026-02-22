@@ -434,10 +434,42 @@ https://www.ssulo.com/robots.txt
 
 ---
 
+## 📊 현재 상태 요약 (구현 후 점검용)
+
+### 개선된 점 (좋은 변화)
+
+| 항목 | 위치 | 의미 |
+|------|------|------|
+| **게시판 SSR 초기 데이터 주입** | `app/board/page.tsx` (line 1, 45) | JS 약한 크롤러도 배틀 링크/텍스트를 초기 HTML에서 발견할 가능성 ↑ |
+| **배틀 상세 JSON-LD 서버 주입** | `app/battle/[battleId]/layout.tsx` (line 89, 138) | 구조화 데이터 인식 안정성 개선 |
+| **사이트맵 실패 시 board URL 유지** | `app/sitemap.ts` (line 45, 54) | DB 일시 오류 때도 크롤러 진입점 유지 |
+
+### 아직 남은 핵심 원인
+
+| 이슈 | 위치 | 설명 |
+|------|------|------|
+| **배틀 상세 본문은 클라이언트 렌더 의존** | `app/battle/[battleId]/page.tsx` (line 1, `'use client'`) | 실제 대화/결과 텍스트는 런타임 로드 후 노출. 네이버/다음에서 특히 불리할 수 있음. |
+| **검색엔진 소유권/콘솔 신호 약함** | `app/layout.tsx` (line 57, `verification` 비어 있음) | `public`에 네이버 인증 파일만 있음(`naver6d1f6150cc36213f9b8e178387aa9f43.html`). Google/Bing 쪽 공식 제출 신호 부족. |
+| **사이트맵이 DB 런타임 의존** | `app/sitemap.ts` (line 13) | DB/환경 이슈 시 상세 URL 공급량이 줄어들 수 있음(홈+게시판만 유지). |
+
+### 권장 후속 조치
+
+1. **Google/Bing 검색 콘솔**
+   - [Google Search Console](https://search.google.com/search-console), [Bing Webmaster](https://www.bing.com/webmasters)에서 사이트 소유권 인증 후, 발급받은 메타 태그 값을 `app/layout.tsx`의 `metadata.verification`에 추가.
+2. **배틀 본문 크롤링**
+   - 배틀 상세를 완전 SSR로 바꾸면 대규모 리팩터링이 필요. 차선: `layout.tsx`에서 이미 주입하는 메타/JSON-LD로 제목·설명·승자·MVP 문장은 노출되므로, “본문 전체” 인덱싱이 약해도 검색 노출에는 일부 기여함.
+3. **사이트맵 안정성**
+   - DB 장애 시에도 배틀 URL을 유지하려면, 주기적으로 sitemap을 정적 파일로 생성해 `public/sitemap.xml`에 두거나, 캐시 레이어를 두는 방식 검토.
+
+---
+
 ## ⚠️ 주의사항
 
 1. **기존 코드 유지:** 이 작업은 기존 기능을 건드리지 않고 SEO 기능만 추가합니다.
-2. **URL 확인:** `metadataBase`와 `baseUrl`을 실제 도메인(`https://www.ssulo.com`)으로 설정했는지 확인하세요.
+2. **URL 확인:** `metadataBase`와 `baseUrl`은 실제 도메인(`https://www.ssulo.com`)으로 설정되어 있음.  
+   - `app/layout.tsx`: `metadataBase: new URL('https://www.ssulo.com')`  
+   - `app/sitemap.ts`: `baseUrl = 'https://www.ssulo.com'`  
+   - `app/feed.xml/route.ts`: `baseUrl = 'https://www.ssulo.com'`
 3. **에러 처리:** Supabase 호출 실패 시에도 기본 메타데이터를 반환하도록 try-catch 처리되어 있습니다.
 4. **이미지 경로:** OG 이미지는 동적으로 생성되므로 별도 이미지 파일 없이도 작동합니다.
 
