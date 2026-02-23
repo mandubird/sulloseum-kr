@@ -162,7 +162,7 @@ export default function BattleArena() {
   }, [autoAdvanceCountdown])
 
   // 자동 진행: waiting일 때마다 한 턴씩 랜덤 반응 → 끝나면(ended) 중단 (턴 간격으로 대사가 읽기 좋게)
-  const AUTO_TURN_DELAY_MS = 2500
+  const AUTO_TURN_DELAY_MS = 4000
   useEffect(() => {
     if (!autoPlaying || !fighter1 || !fighter2) {
       if (phase === 'ended') setAutoPlaying(false)
